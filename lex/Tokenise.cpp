@@ -7,21 +7,21 @@ constexpr i32 MAX_KW_WIDTH = 6;
 
 const Token errTok{ TokenType::Eof };
 
-Token makeTkn(CharIter& iter, u32 w, TokenType type)
+Token makeTkn(Iter<const char>& iter, u32 w, TokenType type)
 {
 	Token tkn{ type, iter.position(), w, 1 };
 	iter.advance(w);
 	return tkn;
 }
 
-Token makeId(CharIter& iter, u32 w, TokenType type)
+Token makeId(Iter<const char>& iter, u32 w, TokenType type)
 {
 	Token tkn{ type, iter.position(), w, 1, String(iter.data(), w) };
 	iter.advance(w);
 	return tkn;
 }
 
-Token parseIdOrKeyword(CharIter& iter, ParseCtx& ctx)
+Token parseIdOrKeyword(Iter<const char>& iter, ParseCtx& ctx)
 {
 	i32 width = 0;
 	while (isalnum(iter.peek(width))) width++;
@@ -41,7 +41,7 @@ Token parseIdOrKeyword(CharIter& iter, ParseCtx& ctx)
 	return makeId(iter, width, TokenType::Identifier);
 }
 
-Token parseToken(CharIter& iter, ParseCtx& ctx)
+Token parseToken(Iter<const char>& iter, ParseCtx& ctx)
 {
 	switch (iter.peek(0))
 	{

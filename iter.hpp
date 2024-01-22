@@ -2,22 +2,23 @@
 
 #include "lib.hpp"
 
-class CharIter
+template <typename T>
+class Iter
 {
 public:
-	const char* begin;
+	T* begin;
 	u64 count;
 
-	CharIter(const char* s, u64 c) :
+	Iter(T* s, u64 c) :
 		begin(s),
 		count(c) {}
 
-	char peek(u32 ahead) const
+	T& peek(u32 ahead) const
 	{
 		return *(begin + count + ahead);
 	}
 
-	const char* data() const
+	T* data() const
 	{
 		return begin + count;
 	}

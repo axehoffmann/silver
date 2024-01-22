@@ -69,3 +69,58 @@ private:
 	char* loc;
 	u16 sz;
 };
+
+template <typename T>
+class Array
+{
+public:
+	Array(u64 sz) :
+		count(sz),
+		data(new T[sz]) {}
+
+	T* begin() const
+	{
+		return data;
+	}
+
+	T* end() const
+	{
+		return data + count;
+	}
+
+	T& operator[](u64 i) const
+	{
+		if (i >= count)
+			exit(-1);
+
+		return *(data + i);
+	}
+
+private:
+	u64 count;
+	T* data;
+};
+
+/*
+template <typename T>
+consteval u32 maxSize()
+{
+	return sizeof(T);
+}
+
+template <typename T, typename ... Ts>
+consteval u32 maxSize()
+{
+	return max(sizeof(T), maxSize<Ts>());
+}
+
+
+template <typename ... Ts>
+struct typelist
+{
+	consteval static maxSize()
+	{
+		return maxSize<Ts...>();
+	}
+};
+*/

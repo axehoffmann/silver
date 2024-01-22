@@ -17,7 +17,7 @@ main: fn()
 int main()
 {
 
-	CharIter it(in, 0);
+	Iter<const char> it(in, 0);
 	while (true)
 	{
 		ParseCtx ctx{};
