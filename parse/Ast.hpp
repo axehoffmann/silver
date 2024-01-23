@@ -1,6 +1,8 @@
 #pragma once
 
+#include "../lex/Token.hpp"
 #include "../lib.hpp"
+#include "../silver.hpp"
 
 enum class NodeType : u32
 {
@@ -10,22 +12,47 @@ enum class NodeType : u32
 
 	Assignment,
 
-	Expression,
+	BinExpr,
+
+	UnaryExpr,
+
+	VarExpr,
 
 	Call,
 };
 
-struct AstNode;
+struct NodePtr
+{
+	NodeType type;
+	void* data;
+};
+
+struct AstBinaryExpr
+{
+	TokenType op;
+	NodePtr lhs;
+	NodePtr rhs;
+};
+
+// An expression denoting a location in memory
+//	eg. x, arr[1], ob.x.y.z, (*ptr)
+struct AstVarExpr
+{
+	String identifier;
+};
 
 struct AstDecl
 {
 	String identifier;
 	String type;
+
+	NodePtr valueExpr; // Expression dictating the value of the declaration.
+					   // valueExpr.data may be null.
 };
 
 struct AstBlock
 {
-	Array<NodePtr> statements;
+	Vector<NodePtr> statements;
 };
 
 struct AstFn
@@ -35,10 +62,3 @@ struct AstFn
 	AstBlock block;
 };
 
-class NodePtr
-{
-public:
-	NodeType type;
-private:
-	void* data;
-};

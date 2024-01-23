@@ -7,14 +7,14 @@ constexpr i32 MAX_KW_WIDTH = 6;
 
 const Token errTok{ TokenType::Eof };
 
-Token makeTkn(Iter<const char>& iter, u32 w, TokenType type)
+Token makeTkn(Iter<const char>& iter, u8 w, TokenType type)
 {
 	Token tkn{ type, iter.position(), w, 1 };
 	iter.advance(w);
 	return tkn;
 }
 
-Token makeId(Iter<const char>& iter, u32 w, TokenType type)
+Token makeId(Iter<const char>& iter, u8 w, TokenType type)
 {
 	Token tkn{ type, iter.position(), w, 1, String(iter.data(), w) };
 	iter.advance(w);

@@ -2,13 +2,7 @@
 
 #include "../lib.hpp"
 
-class ParseCtx
-{
-
-};
-
-
-enum class TokenType : u32
+enum class TokenType : u16
 {
 	Eof = 0,
 

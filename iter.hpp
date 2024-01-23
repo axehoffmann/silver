@@ -9,9 +9,9 @@ public:
 	T* begin;
 	u64 count;
 
-	Iter(T* s, u64 c) :
+	Iter(T* s) :
 		begin(s),
-		count(c) {}
+		count(0) {}
 
 	T& peek(u32 ahead) const
 	{

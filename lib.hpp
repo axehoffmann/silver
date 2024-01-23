@@ -2,6 +2,10 @@
 
 #include <numeric>
 
+#include <vector>
+template <typename T>
+using Vector = std::vector<T>;
+
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
 using u32 = std::uint32_t;
@@ -38,6 +42,14 @@ public:
 		std::memcpy(loc, o.loc, sz);
 	}
 
+	String& operator=(String& o)
+	{
+		loc = new char[o.sz];
+		sz = o.sz;
+		std::memcpy(loc, o.loc, sz);
+		return *this;
+	}
+
 	String(String&& o) noexcept :
 		loc(o.loc),
 		sz(o.sz)
@@ -71,12 +83,48 @@ private:
 };
 
 template <typename T>
+class Optional
+{
+public:
+	Optional() :
+		active(false),
+		data() {}
+
+	Optional(T&& o) :
+		active(true),
+		data(o) {}
+
+private:
+	bool active;
+	T data;
+};
+
+template <typename T>
 class Array
 {
 public:
 	Array(u64 sz) :
 		count(sz),
 		data(new T[sz]) {}
+	
+	Array(u64 sz, T* source) :
+		count(sz),
+		data(new T[sz])
+	{
+		std::memcpy(data, source, sizeof(T) * sz);
+	}
+
+	~Array()
+	{
+		delete[] data;
+	}
+
+	Array(Array&& o) noexcept :
+		count(o.count),
+		data(o.data)
+	{
+		o.data = nullptr;
+	}
 
 	T* begin() const
 	{

@@ -5,6 +5,9 @@
 #include "iter.hpp"
 #include "lex/Tokenise.hpp"
 
+#include "parse/Parse.hpp"
+#include "parse/AstPrint.hpp"
+
 using namespace std;
 
 const char* in = R"(
@@ -17,16 +20,32 @@ main: fn()
 int main()
 {
 
-	Iter<const char> it(in, 0);
+	Iter<const char> it(in);
+	ParseCtx* ctx = new ParseCtx;
+
+	Vector<Token> tkbuf;
+
 	while (true)
 	{
-		ParseCtx ctx{};
-		Token tok(parseToken(it, ctx));
-		printTok(tok);
+		tkbuf.push_back(parseToken(it, *ctx));
 
-		if (tok.type == TokenType::Eof)
+		if (tkbuf.back().type == TokenType::Eof)
 			break;
 	}
 
+	for (const Token& tk : tkbuf)
+	{
+		printTok(tk);
+	}
+	std::cout << "aaa\n";
+
+	Iter<Token> tkit(tkbuf.data());
+	while (parseAst(tkit, *ctx))
+	{
+	}
+
+	printFn((*ctx).functions.front());
+
+	delete ctx;
 	return 0;
 }
