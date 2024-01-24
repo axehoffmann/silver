@@ -42,7 +42,7 @@ public:
 		std::memcpy(loc, o.loc, sz);
 	}
 
-	String& operator=(String& o)
+	String& operator=(const String& o)
 	{
 		loc = new char[o.sz];
 		sz = o.sz;

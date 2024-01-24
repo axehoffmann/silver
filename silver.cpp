@@ -13,7 +13,10 @@ using namespace std;
 const char* in = R"(
 main: fn()
 {
-	var: type = var2;
+	var: type = 5420;
+	x: i32 = var;
+
+	x = var2;
 }
 )" + '\0';
 

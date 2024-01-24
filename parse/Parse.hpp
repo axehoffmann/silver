@@ -26,29 +26,38 @@ void require(Iter<Token>& iter, ParseCtx& ctx, TokenType type, u32 offset)
 	}
 }
 
+AstVarExpr parseVarExpr(Iter<Token>& iter, ParseCtx& ctx, TokenType end)
+{
+	// TODO: handle fn calls, array indexes, etc 
+	AstVarExpr node{ iter.peek(0).val };
+	iter.advance(1);
+	return node;
+}
+
 NodePtr parseExpr(Iter<Token>& iter, ParseCtx& ctx, TokenType end)
 {
-	std::cout << "e: "; printTok(iter.peek(0));
-
 	switch (iter.peek(0).type)
 	{
 	case Identifier:
-		// TODO: handle fn calls, array indexes, etc 
+	{
 		AstVarExpr* node = allocate<AstVarExpr>(ctx);
-		node->identifier = iter.peek(0).val;
-		iter.advance(1);
+		*node = parseVarExpr(iter, ctx, end);
 		return NodePtr{ NodeType::VarExpr, node };
 	}
-
+	case IntLiteral:
+	{
+		AstInteger* in = allocate<AstInteger>(ctx);
+		in->value = iter.peek(0).uint;
+		iter.advance(1);
+		return NodePtr{ NodeType::Integer, in };
+	}
+	}
+	std::cout << "wahhhhh\n";
 	return NodePtr{};
 }
 
 NodePtr parseDecl(Iter<Token>& iter, ParseCtx& ctx, TokenType end)
 {
-	std::cout << "0: "; printTok(iter.peek(0));
-	std::cout << "1: "; printTok(iter.peek(1));
-	std::cout << "2: "; printTok(iter.peek(2));
-
 	// 0 is an identifier, 1 is :, 2 should be a type
 	require(iter, ctx, Identifier, 2);
 
@@ -73,14 +82,28 @@ NodePtr parseDecl(Iter<Token>& iter, ParseCtx& ctx, TokenType end)
 	return NodePtr{ NodeType::Declaration, node };
 }
 
+NodePtr parseAssign(Iter<Token>& iter, ParseCtx& ctx)
+{
+	AstVarExpr lhs = parseVarExpr(iter, ctx, Assign);
+	requireNext(iter, ctx, Assign);
+	NodePtr rhs = parseExpr(iter, ctx, Semi);
+	requireNext(iter, ctx, Semi);
+
+	AstAssign* node = allocate<AstAssign>(ctx);
+	node->lhs = lhs;
+	node->expr = rhs;
+	return NodePtr{ NodeType::Assignment, node };
+}
+
 NodePtr parseStatement(Iter<Token>& iter, ParseCtx& ctx)
 {
 	// 0 is an identifier
-	Token& t = iter.peek(1);
 	switch (iter.peek(1).type)
 	{
 	case Separator:
 		return parseDecl(iter, ctx, Semi);
+	case Assign:
+		return parseAssign(iter, ctx);
 	}
 }
 
@@ -92,7 +115,6 @@ AstBlock parseBlock(Iter<Token>& iter, ParseCtx& ctx)
 
 	while (true)
 	{
-		printTok(iter.peek(0));
 		NodePtr node = parseStatement(iter, ctx);
 		statements.push_back(node);
 		switch (iter.peek(0).type)
@@ -118,18 +140,11 @@ void parseFunction(Iter<Token>& iter, ParseCtx& ctx)
 	AstDecl parameters[MAX_PARAMS];
 	u32 paramCount = 0;
 
-	std::cout << "0: "; printTok(iter.peek(0));
-	std::cout << "1: "; printTok(iter.peek(1));
-	std::cout << "2: "; printTok(iter.peek(2));
-	std::cout << "3: "; printTok(iter.peek(3));
-
 	// Already checked that 0 is an identifier, 1 is ':', and 2 is fn.
 	String name{ iter.peek(0).val };
 	iter.advance(3);
-	std::cout << "x: "; printTok(iter.peek(0));
 
 	requireNext(iter, ctx, LParen);
-	std::cout << "x: "; printTok(iter.peek(0));
 
 	// Parse params
 	u32 curTok = 0;
@@ -147,8 +162,6 @@ void parseFunction(Iter<Token>& iter, ParseCtx& ctx)
 		new (parameters + paramCount) AstDecl{ iter.peek(0).val, iter.peek(1).val };
 		paramCount++;
 		iter.advance(3);
-		std::cout << "hi";
-		printTok(iter.peek(0));
 		if (iter.peek(0).type == Comma)
 		{
 			iter.advance(1);

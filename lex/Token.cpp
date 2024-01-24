@@ -18,6 +18,16 @@ void printTok(const Token& tok)
 		return;
 	}
 
+	if (tok.type == TokenType::IntLiteral)
+	{
+		std::cout
+			<< std::vformat("({}, {}, {}, \"",
+				std::make_format_args(cast(tok.type), tok.loc, tok.count))
+			<< tok.uint
+			<< "\")"
+			<< '\n';
+	}
+
 	std::cout
 		<< std::vformat("({}, {}, {})",
 			std::make_format_args(cast(tok.type), tok.loc, tok.count))

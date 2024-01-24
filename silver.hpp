@@ -9,7 +9,7 @@ struct ParseCtx
 	Vector<AstDecl> variables;
 
 	std::byte buffer[1 << 28];
-	u64 bptr;
+	u64 bptr = 0;
 };
 
 template <typename T>

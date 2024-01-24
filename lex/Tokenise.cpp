@@ -41,6 +41,35 @@ Token parseIdOrKeyword(Iter<const char>& iter, ParseCtx& ctx)
 	return makeId(iter, width, TokenType::Identifier);
 }
 
+u64 pow10(u32 i)
+{
+	u64 x = 1;
+	while (i--)
+	{
+		x *= 10;
+	}
+	return x;
+}
+
+Token parseNumeric(Iter<const char>& iter, ParseCtx& ctx)
+{
+	u8 width = 1;
+	while (isdigit(iter.peek(width)))
+	{
+		width++;
+	}
+
+	u64 value = 0;
+
+	for (i32 digit = 1; digit <= width; digit++)
+	{
+		value += u64(iter.peek(width - digit) - '0') * pow10(digit - 1);
+	}
+	Token tk{ TokenType::IntLiteral, iter.position(), width, 1, String(), {.uint = value } };
+	iter.advance(width);
+	return tk;
+}
+
 Token parseToken(Iter<const char>& iter, ParseCtx& ctx)
 {
 	switch (iter.peek(0))
@@ -75,6 +104,10 @@ Token parseToken(Iter<const char>& iter, ParseCtx& ctx)
 		if (isalpha(iter.peek(0)))
 		{
 			return parseIdOrKeyword(iter, ctx);
+		}
+		if (isdigit(iter.peek(0)))
+		{
+			return parseNumeric(iter, ctx);
 		}
 	};
 }

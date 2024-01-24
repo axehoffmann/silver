@@ -18,6 +18,8 @@ enum class NodeType : u32
 
 	VarExpr,
 
+	Integer,
+
 	Call,
 };
 
@@ -41,6 +43,13 @@ struct AstVarExpr
 	String identifier;
 };
 
+
+struct AstAssign
+{
+	AstVarExpr lhs;
+	NodePtr expr;
+};
+
 struct AstDecl
 {
 	String identifier;
@@ -48,6 +57,11 @@ struct AstDecl
 
 	NodePtr valueExpr; // Expression dictating the value of the declaration.
 					   // valueExpr.data may be null.
+};
+
+struct AstInteger
+{
+	u64 value;
 };
 
 struct AstBlock
