@@ -13,7 +13,7 @@ void indent(i32 tabs)
 
 void printVarExpr(const AstVarExpr& expr)
 {
-	std::cout << expr.identifier.data();
+	std::cout << "vl<" << expr.identifier.data() << ">";
 }
 
 void printInteger(const AstInteger& i)
