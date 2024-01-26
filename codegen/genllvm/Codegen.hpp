@@ -47,7 +47,7 @@ Value* genLoad(LLVMContext& ctx, AstVarExpr* node, llvmScope& scope, llvmBuilder
 	return bldr.CreateLoad(var->getAllocatedType(), var, node->identifier.data());
 }
 
-Function* genFnInterface(LLVMContext& ctx, AstFn& node, Module& modl)
+Function* genFnInterface(LLVMContext& ctx, AstFnInterface& node, Module& modl)
 {
 	FunctionType* fntype = FunctionType::get(Type::getVoidTy(ctx), false);
 	Function* fn = Function::Create(fntype, Function::ExternalLinkage, Twine(node.name.data()), modl);
@@ -90,7 +90,23 @@ void genAssign(LLVMContext& ctx, llvmScope& scope, llvmBuilder& bldr, AstAssign&
 	bldr.CreateStore(val, lhs);
 }
 
-void genStatement(LLVMContext& ctx, llvmScope& scope, llvmBuilder& bldr, NodePtr& node)
+Value* genCall(LLVMContext& ctx, llvmScope& scope, llvmBuilder& bldr, Module& modl, AstCall& call)
+{
+	// #BAD: alloc
+	Array<Value*> args{ call.args.size() };
+	for (u32 i = 0; i < call.args.size(); i++)
+	{
+		args[i] = genExpr(ctx, call.args[i], scope, bldr);
+	}
+	// #TODO: type resolution on all exprs and variables
+	Type* argTys[] = { Type::getInt8PtrTy(ctx) };
+	FunctionType* callTy = FunctionType::get(Type::getInt32Ty(ctx), argTys);
+	FunctionCallee target = modl.getOrInsertFunction(call.name.data(), callTy);
+	return nullptr;
+	// return bldr.CreateCall(target, ArrayRef{ args.begin(), args.end() });
+}
+
+void genStatement(LLVMContext& ctx, llvmScope& scope, llvmBuilder& bldr, Module& modl, NodePtr& node)
 {
 	switch (node.type)
 	{
@@ -100,32 +116,39 @@ void genStatement(LLVMContext& ctx, llvmScope& scope, llvmBuilder& bldr, NodePtr
 	case NodeType::Assignment:
 		genAssign(ctx, scope, bldr, *static_cast<AstAssign*>(node.data));
 		return;
+	case NodeType::Call:
+		genCall(ctx, scope, bldr, modl, *static_cast<AstCall*>(node.data));
+		return;
 	}
+	
+	complain("Don't know how to handle node", 0);
 }
 
-#include "parse/AstPrint.hpp"
-
 // #INCOMPLETE: return values ?
-void genFnBody(LLVMContext& ctx, llvmScope& vars, llvmBuilder& bldr, AstBlock& body)
+void genFnBody(LLVMContext& ctx, llvmScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body)
 {
 	for (NodePtr& node : body.statements)
 	{
-		genStatement(ctx, vars, bldr, node);
+		genStatement(ctx, vars, bldr, modl, node);
 	}
+}
+
+Function* genExternalFn(LLVMContext& ctx, llvmBuilder& bldr, Module& modl, AstFnInterface& fn)
+{
+	return genFnInterface(ctx, fn, modl);
 }
 
 Function* genFn(LLVMContext& ctx, AstFn& node, Module& modl, legacy::FunctionPassManager& fpm) 
 {
-	Function* fn = genFnInterface(ctx, node, modl);
+	Function* fn = genFnInterface(ctx, node.iface, modl);
 	
 	BasicBlock* body = BasicBlock::Create(ctx, "", fn);
 	IRBuilder<> builder{ body, body->begin() };
 
 	llvmScope variables;
-	genFnBody(ctx, variables, builder, node.block);
+	genFnBody(ctx, variables, builder, modl, node.block);
 
 	builder.CreateRet(variables.get(String("x", 3)));
-	// fpm.run(*fn, fam);
 	fpm.run(*fn);
 
 	return fn;

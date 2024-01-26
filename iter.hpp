@@ -6,12 +6,16 @@ template <typename T>
 class Iter
 {
 public:
+
+	u16 column;
+
 	T* begin;
 	u64 count;
 
 	Iter(T* s) :
 		begin(s),
-		count(0) {}
+		count(0),
+		column(0) {}
 
 	T& peek(u32 ahead) const
 	{
@@ -31,6 +35,12 @@ public:
 	void advance(u32 forward)
 	{
 		count += forward;
+		column += forward;
+	}
+
+	void resetCol()
+	{
+		column = 0;
 	}
 
 	/*

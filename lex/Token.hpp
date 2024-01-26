@@ -8,8 +8,9 @@ enum class TokenType : u16
 
 	// Constructs
 	Struct = 100,			// struct
-	Fn = 101,				// fn
-	Enum = 102,				// enum
+	Enum = 101,				// enum
+	Fn = 102,				// fn
+	Externfn = 103,			// externfn
 
 	Identifier = 110,
 
@@ -18,6 +19,7 @@ enum class TokenType : u16
 	Comma = 122,			// ,
 	Comment = 123,			// //
 	Discard = 124,			// _
+	Ret = 125,				// ->
 
 	// Flow
 	If = 170,				// if
@@ -83,6 +85,10 @@ enum class TokenType : u16
 	FloatLiteral = 710,		// 0-9+[.0-9+]f
 
 	StringLiteral = 720,	// "abcxyz123"
+
+	TrueLiteral = 730,		// true
+	FalseLiteral = 731,		// false
+
 };
 
 #include <iostream>
@@ -91,7 +97,8 @@ enum class TokenType : u16
 struct Token
 {
 	TokenType type;
-	u32 loc; // dist into file
+	u32 ln; // dist into file
+	u16 horizontal;
 	u8 count; // width of token
 
 	u32 src; // src file id

@@ -20,7 +20,7 @@ enum class NodeType : u32
 
 	Integer,
 
-	Call,
+	Call
 };
 
 struct NodePtr
@@ -28,6 +28,7 @@ struct NodePtr
 	NodeType type;
 	void* data;
 };
+
 
 struct AstBinaryExpr
 {
@@ -69,10 +70,40 @@ struct AstBlock
 	Vector<NodePtr> statements;
 };
 
-struct AstFn
+struct AstFnInterface
 {
 	String name;
 	Array<AstDecl> parameters;
+	String returnType;
+};
+
+struct AstFn
+{
+	AstFnInterface iface;
 	AstBlock block;
 };
 
+
+struct AstCall
+{
+	String name;
+	Vector<NodePtr> args;
+};
+
+struct ParseCtx
+{
+	Vector<AstFn> functions;
+	// Vector<AstDecl> variables;
+
+	char buffer[1 << 20];
+	u64 bptr = 0;
+};
+
+template <typename T>
+T* allocate(ParseCtx& ctx)
+{
+	T* loc = reinterpret_cast<T*>(&(ctx.buffer[ctx.bptr]));
+	ctx.bptr += sizeof(T);
+	std::construct_at(loc);
+	return loc;
+}

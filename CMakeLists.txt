@@ -2,8 +2,8 @@
 
 project ("silver")
 
-
-find_package(LLVM REQUIRED CONFIG PATHS "C:/tools/llvm-project/build/lib/cmake/llvm")
+ 
+find_package(LLVM REQUIRED CONFIG PATHS "C:/tools/llvm/build/lib/cmake/llvm")
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -14,7 +14,7 @@ include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
  
-add_executable (silver "silver.cpp" "silver.hpp" "iter.hpp" "lib.hpp" "codegen/genllvm/Codegen.hpp" "codegen/genllvm/llvmScope.hpp" "Identifiers.cpp")
+add_executable (silver "silver.cpp" "silver.hpp" "iter.hpp" "lib.hpp" "Identifiers.cpp" "parse/AstPrint.cpp" "parse/Parse.hpp" "parse/Parse.cpp" "codegen/genllvm/Codegen.hpp" "codegen/genllvm/llvmScope.hpp" "typesys/TypeCheck.cpp")
 add_subdirectory(lex)
 
 target_include_directories(silver PUBLIC "../silver")

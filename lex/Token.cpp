@@ -11,7 +11,7 @@ void printTok(const Token& tok)
 	{
 		std::cout
 			<< std::vformat("({}, {}, {}, \"",
-				std::make_format_args(cast(tok.type), tok.loc, tok.count))
+				std::make_format_args(cast(tok.type), tok.ln, tok.count))
 			<< tok.val.data()
 			<< "\")"
 			<< '\n';
@@ -22,7 +22,7 @@ void printTok(const Token& tok)
 	{
 		std::cout
 			<< std::vformat("({}, {}, {}, \"",
-				std::make_format_args(cast(tok.type), tok.loc, tok.count))
+				std::make_format_args(cast(tok.type), tok.ln, tok.count))
 			<< tok.uint
 			<< "\")"
 			<< '\n';
@@ -30,7 +30,7 @@ void printTok(const Token& tok)
 
 	std::cout
 		<< std::vformat("({}, {}, {})",
-			std::make_format_args(cast(tok.type), tok.loc, tok.count))
+			std::make_format_args(cast(tok.type), tok.ln, tok.count))
 		<< ")"
 		<< '\n';
 }
