@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../parse/Ast.hpp"
+#include "ast.hpp"
 
 /*
  * Walks the AST, cascading and inferring types across nodes.

@@ -19,14 +19,14 @@
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 
 
-#include "parse/Ast.hpp"
+#include "src/ast.hpp"
 #include "llvmScope.hpp"
 
 using namespace llvm;
 
 using llvmBuilder = IRBuilder<ConstantFolder, IRBuilderDefaultInserter>;
 
-Type* resolveType(LLVMContext& ctx, String& name)
+Type* resolveType(LLVMContext& ctx, TypeRef& name)
 {
 	return Type::getInt32Ty(ctx);
 }

@@ -23,152 +23,161 @@ using f64 = double;
 class String
 {
 public:
-	String() :
-		loc(nullptr),
-		sz(0) {}
+    String() :
+        loc(nullptr),
+        sz(0) {}
 
-	String(const char* l, u16 w) :
-		loc(new char[w + 1]),
-		sz(w + 1)
-	{
-		std::memcpy(loc, l, w);
-		loc[w] = '\0';
-	}
+    String(const char* l, u16 w) :
+        loc(new char[w + 1]),
+        sz(w + 1)
+    {
+        std::memcpy(loc, l, w);
+        loc[w] = '\0';
+    }
 
-	String(String& o) :
-		loc(new char[o.sz]),
-		sz(o.sz)
-	{
-		std::memcpy(loc, o.loc, sz);
-	}
+    // this is why i am writing a language
+    String(String& o) :
+        loc(new char[o.sz]),
+        sz(o.sz)
+    {
+        std::memcpy(loc, o.loc, sz);
+    }
 
-	String& operator=(const String& o)
-	{
-		loc = new char[o.sz];
-		sz = o.sz;
-		std::memcpy(loc, o.loc, sz);
-		return *this;
-	}
+    String& operator=(const String& o)
+    {
+        loc = new char[o.sz];
+        sz = o.sz;
+        std::memcpy(loc, o.loc, sz);
+        return *this;
+    }
 
-	String(String&& o) noexcept :
-		loc(o.loc),
-		sz(o.sz)
-	{
-		o.loc = nullptr;
-	}
+    String& operator=(String&& o)
+    {
+        loc = o.loc;
+        sz = o.sz;
+        o.loc = nullptr;
+        return *this;
+    }
 
-	~String()
-	{
-		delete[] loc;
-	}
+    String(String&& o) noexcept :
+        loc(o.loc),
+        sz(o.sz)
+    {
+        o.loc = nullptr;
+    }
 
-	const char* data() const
-	{
-		return loc;
-	}
+    ~String()
+    {
+        delete[] loc;
+    }
 
-	u16 size() const
-	{
-		return sz;
-	}
+    const char* data() const
+    {
+        return loc;
+    }
 
-	bool operator==(const String& o) const
-	{
-		return std::strcmp(loc, o.loc);
-	}
+    u16 size() const
+    {
+        return sz;
+    }
+
+    bool operator==(const String& o) const
+    {
+        return std::strcmp(loc, o.loc);
+    }
 
 private:
-	char* loc;
-	u16 sz;
+    char* loc;
+    u16 sz;
 };
 
 template <typename T>
 class Optional
 {
 public:
-	Optional() :
-		active(false),
-		data() {}
+    Optional() :
+        active(false),
+        data() {}
 
-	Optional(T&& o) :
-		active(true),
-		data(o) {}
+    Optional(T&& o) :
+        active(true),
+        data(o) {}
 
 private:
-	bool active;
-	T data;
+    bool active;
+    T data;
 };
 
 template <typename T>
 class Array
 {
 public:
-	Array(u64 sz) :
-		count(sz),
-		data(new T[sz]) {}
-	
-	Array(u64 sz, T* source) :
-		count(sz),
-		data(new T[sz])
-	{
-		std::memcpy(data, source, sizeof(T) * sz);
-	}
+    Array(u64 sz) :
+        count(sz),
+        data(new T[sz]) {}
+    
+    Array(u64 sz, T* source) :
+        count(sz),
+        data(new T[sz])
+    {
+        std::memcpy(data, source, sizeof(T) * sz);
+    }
 
-	~Array()
-	{
-		delete[] data;
-	}
+    ~Array()
+    {
+        delete[] data;
+    }
 
-	Array(Array&& o) noexcept :
-		count(o.count),
-		data(o.data)
-	{
-		o.data = nullptr;
-	}
+    Array(Array&& o) noexcept :
+        count(o.count),
+        data(o.data)
+    {
+        o.data = nullptr;
+    }
 
-	T* begin() const
-	{
-		return data;
-	}
+    T* begin() const
+    {
+        return data;
+    }
 
-	T* end() const
-	{
-		return data + count;
-	}
+    T* end() const
+    {
+        return data + count;
+    }
 
-	T& operator[](u64 i) const
-	{
-		if (i >= count)
-			exit(-1);
+    T& operator[](u64 i) const
+    {
+        if (i >= count)
+            exit(-1);
 
-		return *(data + i);
-	}
+        return *(data + i);
+    }
 
 private:
-	u64 count;
-	T* data;
+    u64 count;
+    T* data;
 };
 
 /*
 template <typename T>
 consteval u32 maxSize()
 {
-	return sizeof(T);
+    return sizeof(T);
 }
 
 template <typename T, typename ... Ts>
 consteval u32 maxSize()
 {
-	return max(sizeof(T), maxSize<Ts>());
+    return max(sizeof(T), maxSize<Ts>());
 }
 
 
 template <typename ... Ts>
 struct typelist
 {
-	consteval static maxSize()
-	{
-		return maxSize<Ts...>();
-	}
+    consteval static maxSize()
+    {
+        return maxSize<Ts...>();
+    }
 };
 */

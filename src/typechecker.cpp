@@ -1,4 +1,5 @@
-#include "TypeCheck.hpp"
+#include "typechecker.hpp"
+#include "ast.hpp"
 
 void checkExpr()
 {
@@ -22,5 +23,5 @@ void checkFn(AstFn& fn)
 
 void checkTypes(ParseCtx& ctx)
 {
-    
+
 }

@@ -14,12 +14,11 @@ include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
  
-add_executable (silver "silver.cpp" "silver.hpp" "iter.hpp" "lib.hpp" "Identifiers.cpp" "parse/AstPrint.cpp" "parse/Parse.hpp" "parse/Parse.cpp" "codegen/genllvm/Codegen.hpp" "codegen/genllvm/llvmScope.hpp" "typesys/TypeCheck.cpp")
-add_subdirectory(lex)
+add_executable(silver "silver.cpp" "silver.hpp" "iter.hpp")
+add_subdirectory(src)
 
 target_include_directories(silver PUBLIC "../silver")
 
-#llvm_map_components_to_libnames(llvm_libs all)
 llvm_map_components_to_libnames(llvm_libs instcombine passes instrumentation scalaropts transformutils analysis support core irreader)
 target_link_libraries(silver ${llvm_libs})
 
