@@ -4,10 +4,13 @@
 #include "lib.hpp"
 #include "silver.hpp"
 #include "typesystem.hpp"
+#include "allocators.hpp"
 
 enum class NodeType : u32
 {
     Fn,
+
+    Externfn,
 
     Declaration,
 
@@ -21,7 +24,7 @@ enum class NodeType : u32
 
     Integer,
 
-        String,
+    String,
 
     Call
 };
@@ -32,6 +35,17 @@ struct NodePtr
     void* data;
 };
 
+struct Symbol
+{
+    const char* key;
+    TypeRef type; // The type of the symbol's value.
+    NodePtr node; // AST node that declares this symbol
+};
+struct Scope
+{
+    Symbol* table;
+    Scope* parent;
+};
 
 struct AstBinaryExpr
 {
@@ -44,7 +58,7 @@ struct AstBinaryExpr
 //    eg. x, arr[1], ob.x.y.z, (*ptr)
 struct AstVarExpr
 {
-    String identifier;
+    const char* identifier;
 };
 
 
@@ -56,7 +70,7 @@ struct AstAssign
 
 struct AstDecl
 {
-    String identifier;
+    const char* identifier;
     TypeRef type;
 
     NodePtr valueExpr; // Expression dictating the value of the declaration.
@@ -70,17 +84,18 @@ struct AstInteger
 
 struct AstString
 {
-    String value;
+    const char* value;
 };
 
 struct AstBlock
 {
     Vector<NodePtr> statements;
+    Scope* scope;
 };
 
 struct AstFnInterface
 {
-    String name;
+    const char* name;
     Array<AstDecl> parameters;
     TypeRef returnType;
 };
@@ -94,21 +109,43 @@ struct AstFn
 
 struct AstCall
 {
-    String name;
+    const char* name;
     Vector<NodePtr> args;
+};
+
+
+class SymbolTable
+{
+public:    
+    // Provides stateful methods to walk the table
+    void enter(AstBlock* block);
+    void exit();
+    void declare(const char* key, TypeRef type, NodePtr node);
+    Symbol* lookup(const char* key);
+
+    BlockAllocator* alloc;
+private:
+    Scope* root = nullptr;
+    Scope* pos = nullptr;
 };
 
 struct ParseCtx
 {
+    // Declared functions in this file
     Vector<AstFn> functions;
-    /// #TODO: declarations across moduels etc/
+
+    // Functions linked against but not compiled here. e.g C functions
     Vector<AstFnInterface> externals;
 
+    // Global variables declared in this file
     // Vector<AstDecl> variables;
+
+    SymbolTable symbols;
 
     char buffer[1 << 20];
     u64 bptr = 0;
 };
+
 
 template <typename T>
 T* allocate(ParseCtx& ctx)

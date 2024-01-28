@@ -2,6 +2,7 @@
 
 #include "token.hpp"
 #include "silver.hpp"
+#include "allocators.hpp"
 
 constexpr u32 LEX_BUFFER_SIZE = 8;
 
@@ -11,7 +12,7 @@ constexpr u32 LEX_BUFFER_SIZE = 8;
 class Lexer
 {
 public:
-    Lexer(const char* source);
+    Lexer(const char* source, StringHeap* strHeap);
 
     // Eats and returns the current tkn.
     Token eat();
@@ -47,6 +48,8 @@ private:
     u64 offset;
     u32 curLn;
     u16 curCol;
+
+    StringHeap* strings;
 };
 
 

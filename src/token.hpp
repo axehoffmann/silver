@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../lib.hpp"
+#include "allocators.hpp"
 
 enum class TokenType : u16
 {
@@ -108,10 +109,9 @@ struct Token
 
     u32 src; // src file id
 
-    String val; // identifiers, string literals
-
     union
     {
+        const char* val; // identifiers, string literals
         u64 uint;    // unsigned int literal
         i64 sint;    // signed int literal
         f64 flt;    // float literal value

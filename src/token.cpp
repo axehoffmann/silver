@@ -12,7 +12,7 @@ void printTok(const Token& tok)
         std::cout
             << std::vformat("({}, {}, {}, \"",
                 std::make_format_args(toi(tok.type), tok.ln, tok.count))
-            << tok.val.data()
+            << tok.val
             << "\")"
             << '\n';
         return;

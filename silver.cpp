@@ -4,7 +4,7 @@
 #include "src/parser.hpp"
 #include "src/cdebug.hpp"
 
-#include "src/llvmb/Codegen.hpp"
+#include "src/llvmb/codegen.hpp"
 
 #include <chrono> 
 
@@ -36,44 +36,33 @@ main: fn()
 }
 )" + '\0';
 
-#define PARSE     1
-#define CODEGEN     0
+#define PARSE       1
+#define CODEGEN     1
 
 int main()
 {
     // Timers
     f64 initT = 0.0, lexT = 0.0, parseT = 0.0, llvmT = 0.0;
 
-    // Init
+    // ----- Init -----
     c::time_point sample = c::now();
-    initT = timerToMs(sample, c::now());
-    Lexer* lex = new Lexer{ in };
+    // Prepare allocators
+    BlockAllocator allocator{};
+    allocator.initialise();
+    StringHeap strings{};
+    strings.initialise();
+
+    Lexer* lex = new Lexer{ in, &strings };
     ParseCtx* pctx = new ParseCtx;
-    
-    /*
-    Vector<Token> tkbuf;
-    // Lexing
-    sample = c::now();
-    while (true)
-    {
-        Token tk = lex->eat();
-        tkbuf.push_back(std::move(tk));
+    // Create root symbol table for the file
+    pctx->symbols.alloc = &allocator;
+    pctx->symbols.enter(nullptr); 
 
-        if (tkbuf.back().type == TokenType::Eof)
-            break;
-    }
-    lexT = timerToMs(sample, c::now());
+    initT = timerToMs(sample, c::now());
 
-
-    for (const Token& tk : tkbuf)
-    {
-        printTok(tk);
-    }
-    */
     std::cout << "\nAST:\n";
     
-    
-    // Parsing
+    // ----- Parsing -----
     sample = c::now();
     while (parseAst(*lex, *pctx));
     parseT = timerToMs(sample, c::now());
@@ -84,12 +73,12 @@ int main()
     }
 
     for (auto& fn : pctx->functions)
-    {
+    { 
         printFn((*pctx).functions.front()); std::cout << '\n';
     }
 
 
-    // LLVM
+    // ----- LLVM -----
 #if CODEGEN == 1
     sample = c::now();
     std::cout << "\nLLVM:\n";
@@ -99,11 +88,12 @@ int main()
     
     printf(R"(----------
     Init:  %f ms
-    Lex:   %f ms
     Parse: %f ms
     LLVM:  %f ms
-)", initT, lexT, parseT, llvmT);
+)", initT, parseT, llvmT);
 
+    allocator.dump();
+    strings.dump();
     delete pctx;
     return 0;
 }

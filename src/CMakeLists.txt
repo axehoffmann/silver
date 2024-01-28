@@ -1,5 +1,5 @@
 # Lazy. compile times should be fast enough anyway.
-file(GLOB comp_src CONFIGURE_DEPENDS
+file(GLOB_RECURSE comp_src CONFIGURE_DEPENDS
      "*.hpp"
      "*.cpp"
 )

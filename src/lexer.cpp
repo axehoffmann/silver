@@ -9,14 +9,15 @@ const Token errTok{ TokenType::Eof };
 
 using enum TokenType;
 
-Lexer::Lexer(const char* source) :
+Lexer::Lexer(const char* source, StringHeap* strHeap) :
     readIdx(0),
     writeIdx(0),
     fid(1),
     src(source),
     offset(0),
     curLn(0),
-    curCol(0)
+    curCol(0),
+    strings(strHeap)
 {
     // Populate buffer initially
     for (i32 i = 0; i < LEX_BUFFER_SIZE; i++)
@@ -65,7 +66,7 @@ Token Lexer::makeTkn(u8 w, TokenType type)
 
 Token Lexer::makeId(u8 w)
 {
-    Token tkn{ Identifier, curLn, curCol, w, fid, String(src + offset, w) };
+    Token tkn{ Identifier, curLn, curCol, w, fid, { .val=strings->get(src + offset, w) } };
     offset += w;
     curCol += w;
     return tkn;
@@ -91,7 +92,7 @@ Token Lexer::lexBasicStringLiteral()
         width++;
     }
 
-    Token tkn{ StringLiteral, curLn, curCol, 1, fid, String(src + offset + 1, width - 1) };
+    Token tkn{ StringLiteral, curLn, curCol, 1, fid, strings->get(src + offset + 1, width - 1) };
     offset += width + 1;
     curCol += width + 1;
     return tkn;
@@ -151,7 +152,7 @@ Token Lexer::lexNumeric()
     {
         value += (u64(*(src + offset + width - digit)) - '0') * pow10(digit - 1);
     }
-    Token tk{ TokenType::IntLiteral, curLn, curCol, width, 1, String(), {.uint = value } };
+    Token tk{ TokenType::IntLiteral, curLn, curCol, width, 1, { .uint = value } };
     offset += width;
     curCol += width;
     return tk;

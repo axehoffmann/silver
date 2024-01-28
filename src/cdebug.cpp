@@ -26,7 +26,7 @@ void printType(const TypeRef& ty)
 
 void printVarExpr(const AstVarExpr& expr)
 {
-    std::cout << "vl<" << expr.identifier.data() << ">";
+    std::cout << "vl<" << expr.identifier << ">";
 }
 
 void printInteger(const AstInteger& i)
@@ -36,7 +36,7 @@ void printInteger(const AstInteger& i)
 
 void printString(const AstString& str)
 {
-    std::cout << '"' << str.value.data() << '"';
+    std::cout << '"' << str.value << '"';
 }
 
 void printExpr(const NodePtr& expr)
@@ -59,7 +59,7 @@ void printExpr(const NodePtr& expr)
 
 void printDecl(const AstDecl& decl)
 {
-    std::cout << "<decl: " << decl.identifier.data() << ": ";
+    std::cout << "<decl: " << decl.identifier << ": ";
     printType(decl.type);
     if (decl.valueExpr.data != nullptr)
     {
@@ -80,7 +80,7 @@ void printAssign(const AstAssign& asgn)
 
 void printCall(const AstCall& call)
 {
-    std::cout << "<call: " << call.name.data() << " (";
+    std::cout << "<call: " << call.name << " (";
     for (u32 i = 0; i < call.args.size(); i++)
     {
         printExpr(call.args[i]);
@@ -122,14 +122,15 @@ void printBlock(const AstBlock& b, i32 i)
 
 void printFnIface(const AstFnInterface& fn)
 {
-    std::cout << "<func: " << fn.name.data() << ", params(";
-    for (const AstDecl& decl : fn.parameters)
+    std::cout << "<func: " << fn.name << "(";
+    for (u32 i = 0; i < fn.parameters.size(); i++)
     {
-        std::cout << decl.identifier.data() << ": ";
-        printType(decl.type);
-        std::cout << ",";
+        std::cout << fn.parameters[i].identifier << ": ";
+        printType(fn.parameters[i].type);
+        if (i < fn.parameters.size() - 1)
+            std::cout << ",";
     }
-    std::cout << ")> ->";
+    std::cout << ")> -> ";
     printType(fn.returnType);
     std::cout << '\n';
 }

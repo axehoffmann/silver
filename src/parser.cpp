@@ -99,7 +99,7 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx)
 NodePtr parseDecl(Lexer& lx, ParseCtx& ctx)
 {
     // 0 is an identifier, 1 is :, 2 should be a type
-    String name = lx.peek(0).val;
+    const char* name = lx.peek(0).val;
     lx.skip(2);
     TypeRef type = parseType(lx, ctx);
     
@@ -112,7 +112,7 @@ NodePtr parseDecl(Lexer& lx, ParseCtx& ctx)
     }
 
     AstDecl* node = allocate<AstDecl>(ctx);
-    node->identifier = std::move(name);
+    node->identifier = name;
     node->type = type;
     node->valueExpr = expr;
     return NodePtr{ NodeType::Declaration, node };
@@ -132,7 +132,8 @@ NodePtr parseAssign(Lexer& lx, ParseCtx& ctx)
 
 NodePtr parseCall(Lexer& lx, ParseCtx& ctx)
 {
-    String fn{ lx.peek(0).val };
+    // 0: ident,  1: (,  2:...
+    const char* fn = lx.peek(0).val;
     lx.skip(2);
 
     Vector<NodePtr> args;
@@ -213,7 +214,7 @@ AstFnInterface parseFnIface(Lexer& lx, ParseCtx& ctx)
     u32 paramCount = 0;
 
     // Already checked that 0 is an identifier, 1 is ':', and 2 is fn/externfn.
-    String name{ lx.peek(0).val };
+    const char* name = lx.peek(0).val;
     lx.skip(3);
 
     requireNext(lx, ctx, LParen);
@@ -229,7 +230,7 @@ AstFnInterface parseFnIface(Lexer& lx, ParseCtx& ctx)
         }
 
         require(lx, ctx, Identifier, 0);
-        String name{ lx.peek(0).val };
+        const char* name = lx.peek(0).val;
         lx.skip(1);
 
         requireNext(lx, ctx, Separator);
@@ -273,11 +274,16 @@ void parseFunction(Lexer& lx, ParseCtx& ctx)
     AstBlock body = parseBlock(lx, ctx);
 
     ctx.functions.emplace_back(std::move(iface), std::move(body));
+    AstFn* fn = &ctx.functions.back();
+    ctx.symbols.declare(fn->iface.name, fn->iface.returnType, NodePtr{ NodeType::Fn, fn });
 }
 
 void parseExternFn(Lexer& lx, ParseCtx& ctx)
 {
     ctx.externals.push_back(parseFnIface(lx, ctx));
+    AstFnInterface* iface = &ctx.externals.back();   
+    // Add the declaration to the symbol table
+    ctx.symbols.declare(iface->name, iface->returnType, NodePtr{ NodeType::Externfn, iface });
     requireNext(lx, ctx, Semi);
 }
 

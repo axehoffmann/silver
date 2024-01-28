@@ -19,104 +19,17 @@ using i64 = std::int64_t;
 using f32 = float;
 using f64 = double;
 
-// Lightweight string, with small max size;
-class String
-{
-public:
-    String() :
-        loc(nullptr),
-        sz(0) {}
-
-    String(const char* l, u16 w) :
-        loc(new char[w + 1]),
-        sz(w + 1)
-    {
-        std::memcpy(loc, l, w);
-        loc[w] = '\0';
-    }
-
-    // this is why i am writing a language
-    String(String& o) :
-        loc(new char[o.sz]),
-        sz(o.sz)
-    {
-        std::memcpy(loc, o.loc, sz);
-    }
-
-    String& operator=(const String& o)
-    {
-        loc = new char[o.sz];
-        sz = o.sz;
-        std::memcpy(loc, o.loc, sz);
-        return *this;
-    }
-
-    String& operator=(String&& o)
-    {
-        loc = o.loc;
-        sz = o.sz;
-        o.loc = nullptr;
-        return *this;
-    }
-
-    String(String&& o) noexcept :
-        loc(o.loc),
-        sz(o.sz)
-    {
-        o.loc = nullptr;
-    }
-
-    ~String()
-    {
-        delete[] loc;
-    }
-
-    const char* data() const
-    {
-        return loc;
-    }
-
-    u16 size() const
-    {
-        return sz;
-    }
-
-    bool operator==(const String& o) const
-    {
-        return std::strcmp(loc, o.loc);
-    }
-
-private:
-    char* loc;
-    u16 sz;
-};
-
-template <typename T>
-class Optional
-{
-public:
-    Optional() :
-        active(false),
-        data() {}
-
-    Optional(T&& o) :
-        active(true),
-        data(o) {}
-
-private:
-    bool active;
-    T data;
-};
+using byte = std::byte;
 
 template <typename T>
 class Array
 {
 public:
-    Array(u64 sz) :
+    Array(u32 sz) :
         count(sz),
         data(new T[sz]) {}
     
-    Array(u64 sz, T* source) :
+    Array(u32 sz, T* source) :
         count(sz),
         data(new T[sz])
     {
@@ -153,8 +66,12 @@ public:
         return *(data + i);
     }
 
+    u32 size() const
+    {
+        return count;
+    }
 private:
-    u64 count;
+    u32 count;
     T* data;
 };
 
