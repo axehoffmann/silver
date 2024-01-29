@@ -106,6 +106,12 @@ struct AstFn
     AstBlock block;
 };
 
+struct AstBinOp
+{
+    NodePtr lhs;
+    TokenType op;
+    NodePtr rhs;
+};
 
 struct AstCall
 {

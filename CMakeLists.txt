@@ -19,7 +19,7 @@ add_subdirectory(src)
 
 target_include_directories(silver PUBLIC "../silver")
 
-llvm_map_components_to_libnames(llvm_libs instcombine passes instrumentation scalaropts transformutils analysis support core irreader)
+llvm_map_components_to_libnames(llvm_libs X86 instcombine passes instrumentation scalaropts transformutils analysis support core irreader)
 target_link_libraries(silver ${llvm_libs})
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

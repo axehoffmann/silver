@@ -1,5 +1,16 @@
 #include "codegen.hpp"
 
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+#include "llvm/Support/raw_ostream.h"
+
+// #TODO: investigate llvm/Support/VirtualFileSystem.h
+
+
 using namespace llvm;
 
 LocalScope::LocalScope()
@@ -44,10 +55,10 @@ Type* resolveType(LLVMContext& ctx, TypeRef& ty)
     case TypeClass::I32:
         return Type::getInt32Ty(ctx);
     case TypeClass::Void:
-        Type::getVoidTy(ctx);
+        return Type::getVoidTy(ctx);
     }
     
-    std::cout << "cant handle this type\n";
+    std::cout << "cant handle type '" << info->name << "'\n";
     exit(-1);
 }
 
@@ -67,11 +78,23 @@ Value* genLoad(LLVMContext& ctx, AstVarExpr* node, LocalScope& scope, llvmBuilde
     return bldr.CreateLoad(var->getAllocatedType(), var, node->identifier);
 }
 
+Value* genStringLiteral(LLVMContext& ctx, AstString* node, LocalScope& scope, llvmBuilder& bldr)
+{
+    return bldr.CreateGlobalStringPtr(node->value);
+}
+
 Function* genFnInterface(LLVMContext& ctx, AstFnInterface& node, Module& modl)
 {
+    if (strcmp(node.name, "main") == 0)
+    {
+        // Main function special case. Needs argc, argv, but isn't explicitly declared in language.
+        Type* args[] = { Type::getInt32PtrTy(ctx), PointerType::get(Type::getInt8PtrTy(ctx), 0)};
+        FunctionType* fntype = FunctionType::get(Type::getInt32Ty(ctx), args, false);
+        return Function::Create(fntype, Function::ExternalLinkage, node.name, modl);
+    }
+
     FunctionType* fntype = FunctionType::get(resolveType(ctx, node.returnType), false);
     Function* fn = Function::Create(fntype, Function::ExternalLinkage, Twine(node.name), modl);
-    /// TODO: above deprecated?
     return fn;
 }
 
@@ -83,9 +106,12 @@ Value* genExpr(LLVMContext& ctx, NodePtr& node, LocalScope& scope, llvmBuilder& 
         return genInteger(ctx, static_cast<AstInteger*>(node.data));
     case NodeType::VarExpr:
         return genLoad(ctx, static_cast<AstVarExpr*>(node.data), scope, bldr);
+    case NodeType::String:
+        return genStringLiteral(ctx, static_cast<AstString*>(node.data), scope, bldr);
     }
 
     std::cout << "rahhh " << static_cast<u32>(node.type) << "\n";
+    exit(-1);
 }
 
 // Generates an alloca at function scope, and a possible store at local scope
@@ -121,10 +147,9 @@ Value* genCall(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, Module& m
         args[i] = genExpr(ctx, call.args[i], scope, bldr);
     }
     // #TODO: type resolution on all exprs and variables
-    FunctionType* callTy = FunctionType::get(Type::getInt32Ty(ctx), ArrayRef{ argTys.begin(), argTys.end()}, false);
+    FunctionType* callTy = FunctionType::get(Type::getInt32Ty(ctx), ArrayRef<Type*>{ argTys.begin(), argTys.end()}, false);
     FunctionCallee target = modl.getOrInsertFunction(call.name, callTy);
-    return nullptr;
-    return bldr.CreateCall(target, ArrayRef{ args.begin(), args.end() });
+    return bldr.CreateCall(target, ArrayRef<Value*>{ args.begin(), args.end() });
 }
 
 void genStatement(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, Module& modl, NodePtr& node)
@@ -181,12 +206,46 @@ void createModule(ParseCtx& ast)
     Module modl{ "fname", ctx };
     legacy::FunctionPassManager fpm{ &modl };
 
+    InitializeAllTargetInfos();
+    InitializeAllTargets();
+    InitializeAllTargetMCs();
+    InitializeAllAsmParsers();
+    InitializeAllAsmPrinters();
+
+    auto triple = sys::getDefaultTargetTriple();
+    std::string err;
+    auto target = TargetRegistry::lookupTarget(triple, err);
+    if (!target)
+    {
+        std::cout << "failed to get LLVM target\n";
+        exit(-1);
+    }
+
+    auto cpu = "generic";
+    auto features = "";
+    TargetOptions opt;
+    auto machine = target->createTargetMachine(triple, cpu, features, opt, Reloc::PIC_);
+
     fpm.add(createPromoteMemoryToRegisterPass());
     fpm.add(createInstructionCombiningPass());
     fpm.add(createReassociatePass());
+    
+    std::error_code errc;
+    raw_fd_ostream dest("silver.o", errc);
+
+    legacy::PassManager pm{};
+    if (machine->addPassesToEmitFile(pm, dest, nullptr, CodeGenFileType::CGFT_ObjectFile))
+    {
+        errs() << "Target and file type incompatible";
+        exit(-1);
+    }
+
+    modl.setDataLayout(machine->createDataLayout());
+    modl.setTargetTriple(triple);
 
     for (AstFn& fn : ast.functions)
         genFn(ctx, fn, modl, fpm);
 
     modl.print(errs(), nullptr);
+    pm.run(modl);
 }

@@ -2,6 +2,21 @@
 
 #include <iostream>
 
+char getOpchar(TokenType tok)
+{
+    switch (tok)
+    {
+    case TokenType::Plus:
+        return '+';
+    case TokenType::Minus:
+        return '-';
+    case TokenType::Star:
+        return '*';
+    }
+
+    return '~';
+}
+
 void indent(i32 tabs)
 {
     for (i32 i = 0; i < tabs; i++)
@@ -51,6 +66,14 @@ void printExpr(const NodePtr& expr)
         return;
     case NodeType::String:
         printString(*static_cast<const AstString*>(expr.data));
+        return;
+    case NodeType::BinExpr:
+        const AstBinaryExpr* binop = static_cast<const AstBinaryExpr*>(expr.data);
+        std::cout << "(";
+        printExpr(binop->lhs);
+        std::cout << ' ' << getOpchar(binop->op) << ' ';
+        printExpr(binop->rhs);
+        std::cout << ")";
         return;
     }
 

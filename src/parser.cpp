@@ -4,9 +4,32 @@
 #include "token.hpp"
 #include "typesystem.hpp"
 
+#include "cdebug.hpp"
+
 constexpr i32 MAX_PARAMS = 10;
 
 using enum TokenType;
+
+struct Precedence
+{
+    u8 lPrecedence;
+    u8 rPrecedence;
+};
+
+Precedence getPrecedence(TokenType token)
+{
+    switch (token)
+    {
+    case Plus:
+    case Minus:
+        return { 1, 2 };
+    case Star:
+    case FSlash:
+    case Modulo:
+        return { 3, 4 };
+    }
+    return { 0, 0 };
+}
 
 void parseComplain(const char* str, const Token& tok)
 {
@@ -69,7 +92,7 @@ AstVarExpr parseVarExpr(Lexer& lx, ParseCtx& ctx)
     return node;
 }
 
-NodePtr parseExpr(Lexer& lx, ParseCtx& ctx)
+NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
 {
     switch (lx.peek(0).type)
     {
@@ -93,7 +116,38 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx)
     }
     }
     std::cout << "wahhhhh\n";
+    exit(-1);
     return NodePtr{};
+}
+
+NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
+{
+    NodePtr val = parseValue(lx, ctx);
+    printExpr(val); std::cout << "\n";
+    while (true)
+    {
+        Token op = lx.peek(0);
+        if (op.type == RParen || op.type == Semi || op.type == Comma)
+            break;
+        lx.eat();
+        if (!(toi(op.type) >= toi(Plus) && toi(op.type) <= toi(Modulo)))
+        {
+            std::cout << "Not a valid binary operator " << toi(op.type) << ", " << op.uint << "\n";
+            exit(-1);
+        }
+
+        auto [lPrec, rPrec] = getPrecedence(op.type);
+        if (lPrec < prec)
+            break;
+
+        NodePtr rhs = parseExpr(lx, ctx, rPrec);
+        AstBinaryExpr* binop = allocate<AstBinaryExpr>(ctx);
+        binop->lhs = val;
+        binop->op = op.type;
+        binop->rhs = rhs;
+        val = NodePtr{ NodeType::BinExpr, binop };
+    }
+    return val;
 }
 
 NodePtr parseDecl(Lexer& lx, ParseCtx& ctx)

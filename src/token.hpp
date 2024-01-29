@@ -50,21 +50,26 @@ enum class TokenType : u16
 
 
     // Symbols
-    LBrace = 300,            // {
-    RBrace = 301,            // }
-    LParen = 302,            // (
-    RParen = 303,            // )
-    LBrack = 304,            // [
-    RBrack = 305,            // ]
+    LBrace = 250,            // {
+    RBrace = 251,            // }
+    LParen = 252,            // (
+    RParen = 253,            // )
+    LBrack = 254,            // [
+    RBrack = 255,            // ]
 
-    Question = 310,            // ?
-    Exclaim = 311,            // !
-    Star = 312,                // *
-    Plus = 313,                // +
-    Minus = 314,            // -
-    FSlash = 315,            // /
+    Assign = 260,            // =
+    Question = 261,          // ?
+    Exclaim = 262,           // !
+
+    // Binary operators
+    Plus = 310,              // +
+    Minus = 311,             // -
+    Star = 312,              // *
+    FSlash = 313,            // /
+    Modulo = 314,            // %
+
+
     BSlash = 316,            // \ 
-    Assign = 317,            // =
 
     Add = 320,                // +=
     Multiply = 321,            // *=

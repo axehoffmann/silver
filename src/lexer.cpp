@@ -193,6 +193,8 @@ Token Lexer::lexToken()
     case ']':
         return makeTkn(1, RBrack);
 
+    case '+':
+        return makeTkn(1, Plus);
     case '*':
         return makeTkn(1, Star);
 

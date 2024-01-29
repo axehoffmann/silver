@@ -28,7 +28,7 @@ puts: externfn(val: *char) -> i32;
 
 main: fn()
 {
-    var: i32 = 5420;
+    var: i32 = 5420 + 20 * 6 * 3 + 6 * 4;
     x: i32 = var;
     
     var = x;
