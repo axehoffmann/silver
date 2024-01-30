@@ -27,12 +27,6 @@ const char* in = R"(
 
 puts: externfn(val: *char);
 
-printerton: fn()
-{
-    var: *char = "Out of order declaration!";
-    puts(var);
-}
-
 main: fn()
 {
     var: i32 = 3 - 3 + 6 * 4;
@@ -43,6 +37,11 @@ main: fn()
     printerton();
 }
 
+printerton: fn()
+{
+    var: *char = "Out of order declaration!";
+    puts(var);
+}
 
 )" + '\0';
 

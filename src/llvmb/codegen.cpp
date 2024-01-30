@@ -213,7 +213,7 @@ Function* genExternalFn(LLVMContext& ctx, llvmBuilder& bldr, Module& modl, AstFn
 
 Function* genFn(LLVMContext& ctx, SymbolTable& sym, AstFn& node, Module& modl, legacy::FunctionPassManager& fpm)
 {
-    Function* fn = genFnInterface(ctx, node.iface, modl);
+    Function* fn = modl.getFunction(node.iface.name);
 
     BasicBlock* body = BasicBlock::Create(ctx, "", fn);
     IRBuilder<> builder{ body, body->begin() };
@@ -270,6 +270,8 @@ void createModule(ParseCtx& ast)
     modl.setDataLayout(machine->createDataLayout());
     modl.setTargetTriple(triple);
 
+    for (AstFn& fn : ast.functions)
+        genFnInterface(ctx, fn.iface, modl);
     for (AstFn& fn : ast.functions)
         genFn(ctx, ast.symbols, fn, modl, fpm);
 
