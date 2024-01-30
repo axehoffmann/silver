@@ -106,19 +106,13 @@ struct AstFn
     AstBlock block;
 };
 
-struct AstBinOp
-{
-    NodePtr lhs;
-    TokenType op;
-    NodePtr rhs;
-};
-
 struct AstCall
 {
     const char* name;
     Vector<NodePtr> args;
 };
 
+AstFnInterface& getInterface(Symbol* symbol);
 
 class SymbolTable
 {
@@ -138,10 +132,10 @@ private:
 struct ParseCtx
 {
     // Declared functions in this file
-    Vector<AstFn> functions;
+    BlockArray<AstFn> functions;
 
     // Functions linked against but not compiled here. e.g C functions
-    Vector<AstFnInterface> externals;
+    BlockArray<AstFnInterface> externals;
 
     // Global variables declared in this file
     // Vector<AstDecl> variables;

@@ -24,16 +24,26 @@ f64 timerToMs(c::time_point a, c::time_point b)
 }
 
 const char* in = R"(
-puts: externfn(val: *char) -> i32;
+
+puts: externfn(val: *char);
+
+printerton: fn()
+{
+    var: *char = "Out of order declaration!";
+    puts(var);
+}
 
 main: fn()
 {
-    var: i32 = 5420 + 20 * 6 * 3 + 6 * 4;
+    var: i32 = 3 - 3 + 6 * 4;
     x: i32 = var;
     
     var = x;
     puts("Hello, digital universe");
+    printerton();
 }
+
+
 )" + '\0';
 
 #define PARSE       1
@@ -74,7 +84,7 @@ int main()
 
     for (auto& fn : pctx->functions)
     { 
-        printFn((*pctx).functions.front()); std::cout << '\n';
+        printFn(fn); std::cout << '\n';
     }
 
 

@@ -123,13 +123,12 @@ NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
 NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
 {
     NodePtr val = parseValue(lx, ctx);
-    printExpr(val); std::cout << "\n";
+
     while (true)
     {
         Token op = lx.peek(0);
         if (op.type == RParen || op.type == Semi || op.type == Comma)
             break;
-        lx.eat();
         if (!(toi(op.type) >= toi(Plus) && toi(op.type) <= toi(Modulo)))
         {
             std::cout << "Not a valid binary operator " << toi(op.type) << ", " << op.uint << "\n";
@@ -139,6 +138,7 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
         auto [lPrec, rPrec] = getPrecedence(op.type);
         if (lPrec < prec)
             break;
+        lx.eat();
 
         NodePtr rhs = parseExpr(lx, ctx, rPrec);
         AstBinaryExpr* binop = allocate<AstBinaryExpr>(ctx);
@@ -327,7 +327,7 @@ void parseFunction(Lexer& lx, ParseCtx& ctx)
     // Parse body
     AstBlock body = parseBlock(lx, ctx);
 
-    ctx.functions.emplace_back(std::move(iface), std::move(body));
+    ctx.functions.push_back(AstFn{ std::move(iface), std::move(body) });
     AstFn* fn = &ctx.functions.back();
     ctx.symbols.declare(fn->iface.name, fn->iface.returnType, NodePtr{ NodeType::Fn, fn });
 }

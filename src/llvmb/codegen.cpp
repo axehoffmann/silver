@@ -47,6 +47,7 @@ Type* resolveType(LLVMContext& ctx, TypeRef& ty)
     
     switch (info->tyclass)
     {
+    case TypeClass::Char:
     case TypeClass::I8:
         if (ty.subty == TypeAnnotation::Pointer)
             return Type::getInt8PtrTy(ctx);
@@ -98,7 +99,30 @@ Function* genFnInterface(LLVMContext& ctx, AstFnInterface& node, Module& modl)
     return fn;
 }
 
-Value* genExpr(LLVMContext& ctx, NodePtr& node, LocalScope& scope, llvmBuilder& bldr)
+Value* genExpr(LLVMContext& ctx, SymbolTable& sym, NodePtr& node, LocalScope& scope, llvmBuilder& bldr);
+
+Value* genBinOp(LLVMContext& ctx, SymbolTable& sym, AstBinaryExpr* node, LocalScope& scope, llvmBuilder& bldr)
+{
+    Value* lhs = genExpr(ctx, sym, node->lhs, scope, bldr);
+    Value* rhs = genExpr(ctx, sym, node->rhs, scope, bldr);
+
+    switch (node->op)
+    {
+    case TokenType::Plus:
+        return bldr.CreateAdd(lhs, rhs);
+    case TokenType::Star:
+        return bldr.CreateMul(lhs, rhs);
+    case TokenType::Minus:
+        return bldr.CreateSub(lhs, rhs);
+    case TokenType::FSlash:
+        return bldr.CreateFDiv(lhs, rhs);
+    }
+    std::cout << "Could not gen LLVM code for binary operator " << toi(node->op);
+    exit(-1);
+}
+
+
+Value* genExpr(LLVMContext& ctx, SymbolTable& sym, NodePtr& node, LocalScope& scope, llvmBuilder& bldr)
 {
     switch (node.type)
     {
@@ -108,14 +132,15 @@ Value* genExpr(LLVMContext& ctx, NodePtr& node, LocalScope& scope, llvmBuilder& 
         return genLoad(ctx, static_cast<AstVarExpr*>(node.data), scope, bldr);
     case NodeType::String:
         return genStringLiteral(ctx, static_cast<AstString*>(node.data), scope, bldr);
+    case NodeType::BinExpr:
+        return genBinOp(ctx, sym, static_cast<AstBinaryExpr*>(node.data), scope, bldr);
     }
-
-    std::cout << "rahhh " << static_cast<u32>(node.type) << "\n";
+    std::cout << "Could not gen LLVM code for expression type " << static_cast<u32>(node.type) << '\n';
     exit(-1);
 }
 
 // Generates an alloca at function scope, and a possible store at local scope
-AllocaInst* genLocalVariableDecl(LLVMContext& ctx, LocalScope& scope, AstDecl& decl, llvmBuilder& bldr)
+AllocaInst* genLocalVariableDecl(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, AstDecl& decl, llvmBuilder& bldr)
 {
     Function* fn = bldr.GetInsertBlock()->getParent();
     IRBuilder<> entry{ &fn->getEntryBlock(), fn->getEntryBlock().begin() };
@@ -124,46 +149,48 @@ AllocaInst* genLocalVariableDecl(LLVMContext& ctx, LocalScope& scope, AstDecl& d
 
     if (decl.valueExpr.data != nullptr)
     {
-        bldr.CreateStore(genExpr(ctx, decl.valueExpr, scope, bldr), inst);
+        bldr.CreateStore(genExpr(ctx, sym, decl.valueExpr, scope, bldr), inst);
     }
     return inst;
 }
 
-void genAssign(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, AstAssign& asgn)
+void genAssign(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, AstAssign& asgn)
 {
-    Value* val = genExpr(ctx, asgn.expr, scope, bldr);
+    Value* val = genExpr(ctx, sym, asgn.expr, scope, bldr);
     Value* lhs = genVarExpr(ctx, asgn.lhs, scope, bldr);
     bldr.CreateStore(val, lhs);
 }
 
-Value* genCall(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, Module& modl, AstCall& call)
+Value* genCall(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, Module& modl, AstCall& call)
 {
     // #BAD: alloc
+    // #TODO: types resolved in typecheck stage instead of symbol table lookup now ?
     Array<Value*> args{ u32(call.args.size()) };
     Array<Type*> argTys{ u32(call.args.size()) };
-    argTys[0] = Type::getInt8PtrTy(ctx);
+    AstFnInterface& fn = getInterface(sym.lookup(call.name));
     for (u32 i = 0; i < call.args.size(); i++)
     {
-        args[i] = genExpr(ctx, call.args[i], scope, bldr);
+        argTys[i] = resolveType(ctx, fn.parameters[i].type);
+        args[i] = genExpr(ctx, sym, call.args[i], scope, bldr);
     }
-    // #TODO: type resolution on all exprs and variables
-    FunctionType* callTy = FunctionType::get(Type::getInt32Ty(ctx), ArrayRef<Type*>{ argTys.begin(), argTys.end()}, false);
+
+    FunctionType* callTy = FunctionType::get(resolveType(ctx, fn.returnType), ArrayRef<Type*>{ argTys.begin(), argTys.end()}, false);
     FunctionCallee target = modl.getOrInsertFunction(call.name, callTy);
     return bldr.CreateCall(target, ArrayRef<Value*>{ args.begin(), args.end() });
 }
 
-void genStatement(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, Module& modl, NodePtr& node)
+void genStatement(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, Module& modl, NodePtr& node)
 {
     switch (node.type)
     {
     case NodeType::Declaration:
-        genLocalVariableDecl(ctx, scope, *static_cast<AstDecl*>(node.data), bldr);
+        genLocalVariableDecl(ctx, sym, scope, *static_cast<AstDecl*>(node.data), bldr);
         return;
     case NodeType::Assignment:
-        genAssign(ctx, scope, bldr, *static_cast<AstAssign*>(node.data));
+        genAssign(ctx, sym, scope, bldr, *static_cast<AstAssign*>(node.data));
         return;
     case NodeType::Call:
-        genCall(ctx, scope, bldr, modl, *static_cast<AstCall*>(node.data));
+        genCall(ctx, sym, scope, bldr, modl, *static_cast<AstCall*>(node.data));
         return;
     }
 
@@ -171,11 +198,11 @@ void genStatement(LLVMContext& ctx, LocalScope& scope, llvmBuilder& bldr, Module
 }
 
 // #INCOMPLETE: return values ?
-void genFnBody(LLVMContext& ctx, LocalScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body)
+void genFnBody(LLVMContext& ctx, SymbolTable& sym, LocalScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body)
 {
     for (NodePtr& node : body.statements)
     {
-        genStatement(ctx, vars, bldr, modl, node);
+        genStatement(ctx, sym, vars, bldr, modl, node);
     }
 }
 
@@ -184,7 +211,7 @@ Function* genExternalFn(LLVMContext& ctx, llvmBuilder& bldr, Module& modl, AstFn
     return genFnInterface(ctx, fn, modl);
 }
 
-Function* genFn(LLVMContext& ctx, AstFn& node, Module& modl, legacy::FunctionPassManager& fpm)
+Function* genFn(LLVMContext& ctx, SymbolTable& sym, AstFn& node, Module& modl, legacy::FunctionPassManager& fpm)
 {
     Function* fn = genFnInterface(ctx, node.iface, modl);
 
@@ -192,7 +219,7 @@ Function* genFn(LLVMContext& ctx, AstFn& node, Module& modl, legacy::FunctionPas
     IRBuilder<> builder{ body, body->begin() };
 
     LocalScope variables;
-    genFnBody(ctx, variables, builder, modl, node.block);
+    genFnBody(ctx, sym, variables, builder, modl, node.block);
 
     builder.CreateRetVoid();
     fpm.run(*fn);
@@ -244,7 +271,7 @@ void createModule(ParseCtx& ast)
     modl.setTargetTriple(triple);
 
     for (AstFn& fn : ast.functions)
-        genFn(ctx, fn, modl, fpm);
+        genFn(ctx, ast.symbols, fn, modl, fpm);
 
     modl.print(errs(), nullptr);
     pm.run(modl);

@@ -48,6 +48,14 @@ public:
         o.data = nullptr;
     }
 
+    Array& operator=(Array&& o)
+    {
+        data = o.data;
+        count = o.count;
+        o.data = nullptr;
+        return *this;
+    }
+
     T* begin() const
     {
         return data;

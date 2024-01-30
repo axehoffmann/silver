@@ -2,6 +2,17 @@
 
 #include "stb_ds.h"
 
+AstFnInterface& getInterface(Symbol* symbol)
+{
+    if (symbol->node.type == NodeType::Fn)
+        return static_cast<AstFn*>(symbol->node.data)->iface;
+    if (symbol->node.type == NodeType::Externfn)
+        return *static_cast<AstFnInterface*>(symbol->node.data);
+
+    std::cout << "Symbol resolution to function failed\n";
+    exit(-1);
+}
+
 void SymbolTable::enter(AstBlock* block)
 {
     if (block != nullptr && block->scope != nullptr)
