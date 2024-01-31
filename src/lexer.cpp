@@ -104,11 +104,16 @@ Token Lexer::lexIdOrKeyword()
     // Find end of id
     while (isalnum(*(src + offset + width))) width++;
 
+    // #TODO: hash collisions could create keywords 
+    // out of identifiers where it shouldn't
     switch (shashdyn(src + offset, width))
     {
         // Decls
     case shash("fn"):        return makeTkn(2, TokenType::Fn);
     case shash("externfn"): return makeTkn(8, TokenType::Externfn);
+
+        // Control flow
+    case shash("if"):       return makeTkn(2, TokenType::If);
 
         // Integrals
     case shash("i8"):    return makeTkn(2, TokenType::I8);
@@ -175,7 +180,13 @@ Token Lexer::lexToken()
     case ':':
         return makeTkn(1, Separator);
     case '=':
-        return makeTkn(1, Assign);
+        switch (*(src + offset + 1))
+        {
+        case '=':
+            return makeTkn(2, Eq);
+        default:
+            return makeTkn(1, Assign);
+        }
     case ',':
         return makeTkn(1, Comma);
     case ';':

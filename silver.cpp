@@ -25,7 +25,7 @@ f64 timerToMs(c::time_point a, c::time_point b)
 
 const char* in = R"(
 
-puts: externfn(val: *char);
+puts: externfn(val: *char) -> i32;
 
 main: fn()
 {
@@ -34,13 +34,18 @@ main: fn()
     
     var = x;
     puts("Hello, digital universe");
-    printerton();
+    printerton(0);
+    printerton(1);
+    printerton(2);
 }
 
-printerton: fn()
+printerton: fn(cond: i32)
 {
-    var: *char = "Out of order declaration!";
-    puts(var);
+    if cond == 1 
+    {
+        var: *char = "Out of order declaration!";
+        puts(var);
+    }
 }
 
 )" + '\0';

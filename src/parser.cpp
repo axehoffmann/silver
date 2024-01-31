@@ -127,9 +127,9 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
     while (true)
     {
         Token op = lx.peek(0);
-        if (op.type == RParen || op.type == Semi || op.type == Comma)
+        if (op.type == RParen || op.type == Semi || op.type == Comma || op.type == LBrace)
             break;
-        if (!(toi(op.type) >= toi(Plus) && toi(op.type) <= toi(Modulo)))
+        if (!(toi(op.type) >= toi(Plus) && toi(op.type) <= toi(Or)))
         {
             std::cout << "Not a valid binary operator " << toi(op.type) << ", " << op.uint << "\n";
             exit(-1);
@@ -231,6 +231,18 @@ NodePtr parseStatement(Lexer& lx, ParseCtx& ctx)
         complain("Expected a statement (e.g. declaration, function call, etc)", lx.peek(0).ln);
     }
 }
+AstBlock parseBlock(Lexer& lx, ParseCtx& ctx);
+NodePtr parseIf(Lexer& lx, ParseCtx& ctx)
+{
+    lx.eat();
+
+    NodePtr condition = parseExpr(lx, ctx);
+    AstBlock block = parseBlock(lx, ctx);
+    AstIf* ifb = allocate<AstIf>(ctx);
+    ifb->block = std::move(block);
+    ifb->condition = condition;
+    return NodePtr{ NodeType::If, ifb };
+}
 
 AstBlock parseBlock(Lexer& lx, ParseCtx& ctx)
 {
@@ -246,10 +258,12 @@ AstBlock parseBlock(Lexer& lx, ParseCtx& ctx)
             NodePtr node = parseStatement(lx, ctx);
             statements.push_back(node);
             break;
+        case If:
+            statements.push_back(parseIf(lx, ctx));
+            break;
         default:
             printTok(lx.peek(0));
             complain("aahh", 0);
-            // For loop etc
         }
 
         if (lx.peek(0).type == RBrace)

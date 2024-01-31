@@ -32,20 +32,26 @@
 
 #include <iostream>
 
+enum class VarType : u8
+{
+    LocalVar,
+    Param
+};
+
 class LocalScope
 {
-private:
+public:
     struct Entry
     {
         const char* key;
-        llvm::AllocaInst* value;
+        VarType type;
+        llvm::Value* val;
     };
-public:
     LocalScope();
 
-    void put(const char* name, llvm::AllocaInst* inst);
+    void put(const char* name, VarType type, llvm::Value* val);
 
-    llvm::AllocaInst* get(const char* name);
+    Entry* get(const char* name);
 
     ~LocalScope();
 private:

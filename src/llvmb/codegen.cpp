@@ -7,6 +7,7 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Verifier.h"
 
 // #TODO: investigate llvm/Support/VirtualFileSystem.h
 
@@ -18,12 +19,13 @@ LocalScope::LocalScope()
     sh_new_arena(hashTable);
 }
 
-void LocalScope::put(const char* name, AllocaInst * inst)
+void LocalScope::put(const char* name, VarType ty, llvm::Value* inst)
 {
-    shput(hashTable, name, inst);
+    Entry val{ name, ty, inst };
+    shputs(hashTable, val);
 }
 
-AllocaInst* LocalScope::get(const char* name)
+LocalScope::Entry* LocalScope::get(const char* name)
 {
     i64 idx = shgeti(hashTable, name);
     if (idx == -1)
@@ -31,7 +33,7 @@ AllocaInst* LocalScope::get(const char* name)
         std::cout << "scope lookup fail wahh\n";
     }
 
-    return hashTable[idx].value;
+    return &hashTable[idx];
 }
 
 LocalScope::~LocalScope()
@@ -68,15 +70,23 @@ Value* genInteger(LLVMContext& ctx, AstInteger* node)
     return ConstantInt::get(Type::getInt32Ty(ctx), node->value);
 }
 
-Value* genVarExpr(LLVMContext& ctx, AstVarExpr& node, LocalScope& scope, llvmBuilder& bldr)
-{
-    return scope.get(node.identifier);
-}
 
-Value* genLoad(LLVMContext& ctx, AstVarExpr* node, LocalScope& scope, llvmBuilder& bldr)
+Value* genVarExpr(LLVMContext& ctx, AstVarExpr& node, LocalScope& scope, llvmBuilder& bldr, bool asPtr = false)
 {
-    AllocaInst* var = scope.get(node->identifier);
-    return bldr.CreateLoad(var->getAllocatedType(), var, node->identifier);
+    LocalScope::Entry* e = scope.get(node.identifier);
+    switch (e->type)
+    {
+    case VarType::Param:
+        return e->val;
+    case VarType::LocalVar:
+        AllocaInst* a = static_cast<AllocaInst*>(e->val);
+        // #TODO: i think this is ugly. Try unify concept of loads/stores with various var types.
+        if (asPtr)
+            return a;
+        return bldr.CreateLoad(a->getAllocatedType(), a);
+    }
+    std::cout << "not good :(\n";
+    exit(-1);
 }
 
 Value* genStringLiteral(LLVMContext& ctx, AstString* node, LocalScope& scope, llvmBuilder& bldr)
@@ -93,8 +103,13 @@ Function* genFnInterface(LLVMContext& ctx, AstFnInterface& node, Module& modl)
         FunctionType* fntype = FunctionType::get(Type::getInt32Ty(ctx), args, false);
         return Function::Create(fntype, Function::ExternalLinkage, node.name, modl);
     }
-
-    FunctionType* fntype = FunctionType::get(resolveType(ctx, node.returnType), false);
+    
+    Array<Type*> args{ node.parameters.size() };
+    for (u32 i = 0; i < node.parameters.size(); i++) 
+    {
+        args[i] = resolveType(ctx, node.parameters[i].type);
+    }
+    FunctionType* fntype = FunctionType::get(resolveType(ctx, node.returnType), ArrayRef<Type*>{ args.begin(), args.end() }, false);
     Function* fn = Function::Create(fntype, Function::ExternalLinkage, Twine(node.name), modl);
     return fn;
 }
@@ -116,8 +131,10 @@ Value* genBinOp(LLVMContext& ctx, SymbolTable& sym, AstBinaryExpr* node, LocalSc
         return bldr.CreateSub(lhs, rhs);
     case TokenType::FSlash:
         return bldr.CreateFDiv(lhs, rhs);
+    case TokenType::Eq:
+        return bldr.CreateICmpEQ(lhs, rhs);
     }
-    std::cout << "Could not gen LLVM code for binary operator " << toi(node->op);
+    std::cout << "Could not gen LLVM code for binary operator " << toi(node->op) << '\n';
     exit(-1);
 }
 
@@ -129,7 +146,7 @@ Value* genExpr(LLVMContext& ctx, SymbolTable& sym, NodePtr& node, LocalScope& sc
     case NodeType::Integer:
         return genInteger(ctx, static_cast<AstInteger*>(node.data));
     case NodeType::VarExpr:
-        return genLoad(ctx, static_cast<AstVarExpr*>(node.data), scope, bldr);
+        return genVarExpr(ctx, *static_cast<AstVarExpr*>(node.data), scope, bldr);
     case NodeType::String:
         return genStringLiteral(ctx, static_cast<AstString*>(node.data), scope, bldr);
     case NodeType::BinExpr:
@@ -145,7 +162,7 @@ AllocaInst* genLocalVariableDecl(LLVMContext& ctx, SymbolTable& sym, LocalScope&
     Function* fn = bldr.GetInsertBlock()->getParent();
     IRBuilder<> entry{ &fn->getEntryBlock(), fn->getEntryBlock().begin() };
     AllocaInst* inst = entry.CreateAlloca(resolveType(ctx, decl.type), nullptr, decl.identifier);
-    scope.put(decl.identifier, inst);
+    scope.put(decl.identifier, VarType::LocalVar, inst);
 
     if (decl.valueExpr.data != nullptr)
     {
@@ -157,7 +174,7 @@ AllocaInst* genLocalVariableDecl(LLVMContext& ctx, SymbolTable& sym, LocalScope&
 void genAssign(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, AstAssign& asgn)
 {
     Value* val = genExpr(ctx, sym, asgn.expr, scope, bldr);
-    Value* lhs = genVarExpr(ctx, asgn.lhs, scope, bldr);
+    Value* lhs = genVarExpr(ctx, asgn.lhs, scope, bldr, true);
     bldr.CreateStore(val, lhs);
 }
 
@@ -179,6 +196,21 @@ Value* genCall(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilde
     return bldr.CreateCall(target, ArrayRef<Value*>{ args.begin(), args.end() });
 }
 
+void genBlock(LLVMContext& ctx, SymbolTable& sym, LocalScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body);
+
+void genIf(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, Module& modl, AstIf& node)
+{
+    Value* condition = genExpr(ctx, sym, node.condition, scope, bldr);
+    BasicBlock* ifBlock = BasicBlock::Create(ctx, "", bldr.GetInsertBlock()->getParent());
+    BasicBlock* postBlock = BasicBlock::Create(ctx, "", bldr.GetInsertBlock()->getParent());
+    bldr.CreateCondBr(condition, ifBlock, postBlock);
+    bldr.SetInsertPoint(ifBlock);
+    // #TODO: generate a local scope within the block?
+    genBlock(ctx, sym, scope, bldr, modl, node.block);
+    bldr.CreateBr(postBlock);
+    bldr.SetInsertPoint(postBlock);
+}
+
 void genStatement(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBuilder& bldr, Module& modl, NodePtr& node)
 {
     switch (node.type)
@@ -192,13 +224,17 @@ void genStatement(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBui
     case NodeType::Call:
         genCall(ctx, sym, scope, bldr, modl, *static_cast<AstCall*>(node.data));
         return;
+    case NodeType::If:
+        genIf(ctx, sym, scope, bldr, modl, *static_cast<AstIf*>(node.data));
+        return;
     }
 
-    complain("Don't know how to handle node", 0);
+    std::cout << "cant handle: " << static_cast<u32>(node.type) << '\n';
+    exit(-1);
 }
 
 // #INCOMPLETE: return values ?
-void genFnBody(LLVMContext& ctx, SymbolTable& sym, LocalScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body)
+void genBlock(LLVMContext& ctx, SymbolTable& sym, LocalScope& vars, llvmBuilder& bldr, Module& modl, AstBlock& body)
 {
     for (NodePtr& node : body.statements)
     {
@@ -219,8 +255,18 @@ Function* genFn(LLVMContext& ctx, SymbolTable& sym, AstFn& node, Module& modl, l
     IRBuilder<> builder{ body, body->begin() };
 
     LocalScope variables;
-    genFnBody(ctx, sym, variables, builder, modl, node.block);
+    u32 i = 0;
+    for (auto& arg : fn->args())
+    {
+        // Can have more args than interface parameters if fn is main (implicit params)
+        if (i >= node.iface.parameters.size())
+            break;
 
+        variables.put(node.iface.parameters[i].identifier, VarType::Param, &arg);
+        i++;
+    }
+
+    genBlock(ctx, sym, variables, builder, modl, node.block);
     builder.CreateRetVoid();
     fpm.run(*fn);
 

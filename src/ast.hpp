@@ -13,17 +13,14 @@ enum class NodeType : u32
     Externfn,
 
     Declaration,
-
     Assignment,
 
+    If,
+
     BinExpr,
-
     UnaryExpr,
-
     VarExpr,
-
     Integer,
-
     String,
 
     Call
@@ -91,6 +88,12 @@ struct AstBlock
 {
     Vector<NodePtr> statements;
     Scope* scope;
+};
+
+struct AstIf
+{
+    AstBlock block;
+    NodePtr condition;
 };
 
 struct AstFnInterface

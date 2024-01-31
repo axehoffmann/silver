@@ -41,7 +41,7 @@ void printType(const TypeRef& ty)
 
 void printVarExpr(const AstVarExpr& expr)
 {
-    std::cout << "vl<" << expr.identifier << ">";
+    std::cout << "val<" << expr.identifier << ">";
 }
 
 void printInteger(const AstInteger& i)
@@ -113,6 +113,15 @@ void printCall(const AstCall& call)
     std::cout << ") >";
 }
 
+void printBlock(const AstBlock& b, i32 i);
+void printIf(const AstIf& stmt, i32 i)
+{
+    std::cout << "<if: ";
+    printExpr(stmt.condition);
+    std::cout << " >:\n";
+    printBlock(stmt.block, i + 1);
+}
+
 void printStatement(const NodePtr& stmt, i32 i)
 {
     switch (stmt.type)
@@ -126,6 +135,9 @@ void printStatement(const NodePtr& stmt, i32 i)
     case NodeType::Call:
         printCall(*static_cast<const AstCall*>(stmt.data));
         return;
+    case NodeType::If:
+        printIf(*static_cast<const AstIf*>(stmt.data), i);
+        return;
     }
 
     std::cout << "don't know how to print this statement";
@@ -137,7 +149,7 @@ void printBlock(const AstBlock& b, i32 i)
 
     for (const NodePtr& node : b.statements)
     {
-        indent(i + 1); printStatement(node, i + 1); std::cout << "\n";
+        indent(i + 1); printStatement(node, i); std::cout << "\n";
     }
 
     indent(i); std::cout << "}\n";

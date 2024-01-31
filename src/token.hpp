@@ -68,26 +68,25 @@ enum class TokenType : u16
     FSlash = 313,            // /
     Modulo = 314,            // %
 
-    // Unary operators
-    Addressof = 340,        // ^
-
     // Comparison operators
-    Eq = 360,                // ==
-    Neq = 361,                // !=
-    Lt = 362,                // <
-    Leq = 363,                // <=
-    Gt = 364,                // >
-    Geq = 365,                // >=
+    Eq = 340,                // ==
+    Neq = 341,               // !=
+    Lt = 342,                // <
+    Leq = 343,               // <=
+    Gt = 344,                // >
+    Geq = 345,               // >=
+    // Boolean operators
+    And = 360,               // &&
+    Or = 361,                // ||
+
+    // Unary operators
+    Addressof = 380,         // ^
 
     // Assignment operators
-    Add = 370,                // +=
-    Multiply = 371,            // *=
-    Subtract = 372,            // -=
-    Divide = 373,            // /=
-
-    // Boolean operators
-    And = 400,                // &&
-    Or = 401,                // ||
+    Add = 400,                // +=
+    Multiply = 401,            // *=
+    Subtract = 402,            // -=
+    Divide = 403,            // /=
 
     // Literals
     IntLiteral = 700,        // 0-9+
