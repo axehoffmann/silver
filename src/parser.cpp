@@ -92,27 +92,41 @@ AstVarExpr parseVarExpr(Lexer& lx, ParseCtx& ctx)
     return node;
 }
 
+NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0);
+
 NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
 {
+    // Handle unary/other ops
     switch (lx.peek(0).type)
     {
     case Identifier:
     {
         AstVarExpr* node = allocate<AstVarExpr>(ctx);
         *node = parseVarExpr(lx, ctx);
-        return NodePtr{ NodeType::VarExpr, node };
+        return NodePtr{ .type=NodeType::VarExpr, .varexpr=node };
     }
     case IntLiteral:
     {
         AstInteger* in = allocate<AstInteger>(ctx);
         in->value = lx.eat().uint;
-        return NodePtr{ NodeType::Integer, in };
+        return NodePtr{ .type=NodeType::Integer, .integer=in };
     }
     case StringLiteral:
     {
         AstString* str = allocate<AstString>(ctx);
         str->value = lx.eat().val;
-        return NodePtr{ NodeType::String, str };
+        return NodePtr{ .type=NodeType::String, .string=str };
+    }
+    case Ifx:
+    {
+        lx.eat();
+        AstIfExpr* expr = allocate<AstIfExpr>(ctx);
+        expr->condition = parseExpr(lx, ctx);
+        requireNext(lx, ctx, Then);
+        expr->trueVal = parseExpr(lx, ctx);
+        requireNext(lx, ctx, Else);
+        expr->falseVal = parseExpr(lx, ctx);
+        return NodePtr{ .type=NodeType::IfExpr, .ifexpr=expr };
     }
     }
     std::cout << "wahhhhh\n";
@@ -120,15 +134,17 @@ NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
     return NodePtr{};
 }
 
-NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
+NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec)
 {
     NodePtr val = parseValue(lx, ctx);
 
     while (true)
     {
         Token op = lx.peek(0);
-        if (op.type == RParen || op.type == Semi || op.type == Comma || op.type == LBrace)
+        // #tODO: Range check here instead?
+        if (op.type == RParen || op.type == Semi || op.type == Comma || op.type == LBrace || op.type == Then || op.type == Else)
             break;
+
         if (!(toi(op.type) >= toi(Plus) && toi(op.type) <= toi(Or)))
         {
             std::cout << "Not a valid binary operator " << toi(op.type) << ", " << op.uint << "\n";
@@ -145,7 +161,7 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0)
         binop->lhs = val;
         binop->op = op.type;
         binop->rhs = rhs;
-        val = NodePtr{ NodeType::BinExpr, binop };
+        val = NodePtr{ .type=NodeType::BinExpr, .binexpr=binop };
     }
     return val;
 }
@@ -169,7 +185,7 @@ NodePtr parseDecl(Lexer& lx, ParseCtx& ctx)
     node->identifier = name;
     node->type = type;
     node->valueExpr = expr;
-    return NodePtr{ NodeType::Declaration, node };
+    return NodePtr{ .type=NodeType::Declaration, .decl=node };
 }
 
 NodePtr parseAssign(Lexer& lx, ParseCtx& ctx)
@@ -181,7 +197,7 @@ NodePtr parseAssign(Lexer& lx, ParseCtx& ctx)
     AstAssign* node = allocate<AstAssign>(ctx);
     node->lhs = lhs;
     node->expr = rhs;
-    return NodePtr{ NodeType::Assignment, node };
+    return NodePtr{ .type=NodeType::Assignment, .assign=node };
 }
 
 NodePtr parseCall(Lexer& lx, ParseCtx& ctx)
@@ -206,7 +222,7 @@ NodePtr parseCall(Lexer& lx, ParseCtx& ctx)
     AstCall* call = allocate<AstCall>(ctx);
     call->name = fn;
     call->args = std::move(args);
-    return NodePtr{ NodeType::Call, call };
+    return NodePtr{ .type=NodeType::Call, .call=call };
 }
 
 NodePtr parseStatement(Lexer& lx, ParseCtx& ctx)
@@ -241,7 +257,7 @@ NodePtr parseIf(Lexer& lx, ParseCtx& ctx)
     AstIf* ifb = allocate<AstIf>(ctx);
     ifb->block = std::move(block);
     ifb->condition = condition;
-    return NodePtr{ NodeType::If, ifb };
+    return NodePtr{ .type=NodeType::If, .ifs=ifb };
 }
 
 AstBlock parseBlock(Lexer& lx, ParseCtx& ctx)
@@ -343,7 +359,7 @@ void parseFunction(Lexer& lx, ParseCtx& ctx)
 
     ctx.functions.push_back(AstFn{ std::move(iface), std::move(body) });
     AstFn* fn = &ctx.functions.back();
-    ctx.symbols.declare(fn->iface.name, fn->iface.returnType, NodePtr{ NodeType::Fn, fn });
+    ctx.symbols.declare(fn->iface.name, fn->iface.returnType, NodePtr{ .type=NodeType::Fn, .fn=fn });
 }
 
 void parseExternFn(Lexer& lx, ParseCtx& ctx)
@@ -351,7 +367,7 @@ void parseExternFn(Lexer& lx, ParseCtx& ctx)
     ctx.externals.push_back(parseFnIface(lx, ctx));
     AstFnInterface* iface = &ctx.externals.back();   
     // Add the declaration to the symbol table
-    ctx.symbols.declare(iface->name, iface->returnType, NodePtr{ NodeType::Externfn, iface });
+    ctx.symbols.declare(iface->name, iface->returnType, NodePtr{ .type=NodeType::Externfn, .fni=iface });
     requireNext(lx, ctx, Semi);
 }
 

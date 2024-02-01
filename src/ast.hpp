@@ -20,16 +20,43 @@ enum class NodeType : u32
     BinExpr,
     UnaryExpr,
     VarExpr,
+    IfExpr,
     Integer,
     String,
 
     Call
 };
 
+struct AstFn;
+struct AstFnInterface;
+struct AstBinaryExpr;
+struct AstVarExpr;
+struct AstAssign;
+struct AstDecl;
+struct AstInteger;
+struct AstString;
+struct AstCall;
+struct AstIf;
+struct AstIfExpr;
+
 struct NodePtr
 {
     NodeType type;
-    void* data;
+    union
+    {
+        void* data;
+        AstFn* fn;
+        AstFnInterface* fni;
+        AstBinaryExpr* binexpr;
+        AstVarExpr* varexpr;
+        AstAssign* assign;
+        AstDecl* decl;
+        AstInteger* integer;
+        AstString* string;
+        AstCall* call;
+        AstIf* ifs;
+        AstIfExpr* ifexpr;
+    };
 };
 
 struct Symbol
@@ -94,6 +121,13 @@ struct AstIf
 {
     AstBlock block;
     NodePtr condition;
+};
+
+struct AstIfExpr
+{
+    NodePtr condition;
+    NodePtr trueVal;
+    NodePtr falseVal;
 };
 
 struct AstFnInterface

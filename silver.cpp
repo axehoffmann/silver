@@ -35,16 +35,17 @@ main: fn()
     var = x;
     puts("Hello, digital universe");
     printerton(0);
-    printerton(1);
-    printerton(2);
+    printerton(1, 0);
+    printerton(var - 23, 1);
 }
 
-printerton: fn(cond: i32)
+printerton: fn(cond: i32, msgnum: i32)
 {
     if cond == 1 
     {
         var: *char = "Out of order declaration!";
-        puts(var);
+        varB: *char = "Crazy stuff";
+        puts(ifx msgnum == 0 then var else varB);
     }
 }
 

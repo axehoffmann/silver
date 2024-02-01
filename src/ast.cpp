@@ -5,9 +5,9 @@
 AstFnInterface& getInterface(Symbol* symbol)
 {
     if (symbol->node.type == NodeType::Fn)
-        return static_cast<AstFn*>(symbol->node.data)->iface;
+        return symbol->node.fn->iface;
     if (symbol->node.type == NodeType::Externfn)
-        return *static_cast<AstFnInterface*>(symbol->node.data);
+        return *symbol->node.fni;
 
     std::cout << "Symbol resolution to function failed\n";
     exit(-1);

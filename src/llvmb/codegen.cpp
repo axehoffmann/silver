@@ -138,19 +138,31 @@ Value* genBinOp(LLVMContext& ctx, SymbolTable& sym, AstBinaryExpr* node, LocalSc
     exit(-1);
 }
 
+Value* genIfExpr(LLVMContext& ctx, SymbolTable& sym, AstIfExpr* expr, LocalScope& scope, llvmBuilder& bldr)
+{
+    // #TODO: this should probably be an ir-level branch so the non-selected side
+    // can be invalid based on the condition
+    Value* condition = genExpr(ctx, sym, expr->condition, scope, bldr);
+    Value* tVal = genExpr(ctx, sym, expr->trueVal, scope, bldr);
+    Value* fVal = genExpr(ctx, sym, expr->falseVal, scope, bldr);
+
+    return bldr.CreateSelect(condition, tVal, fVal);
+}
 
 Value* genExpr(LLVMContext& ctx, SymbolTable& sym, NodePtr& node, LocalScope& scope, llvmBuilder& bldr)
 {
     switch (node.type)
     {
     case NodeType::Integer:
-        return genInteger(ctx, static_cast<AstInteger*>(node.data));
+        return genInteger(ctx, node.integer);
     case NodeType::VarExpr:
-        return genVarExpr(ctx, *static_cast<AstVarExpr*>(node.data), scope, bldr);
+        return genVarExpr(ctx, *node.varexpr, scope, bldr);
     case NodeType::String:
-        return genStringLiteral(ctx, static_cast<AstString*>(node.data), scope, bldr);
+        return genStringLiteral(ctx, node.string, scope, bldr);
     case NodeType::BinExpr:
-        return genBinOp(ctx, sym, static_cast<AstBinaryExpr*>(node.data), scope, bldr);
+        return genBinOp(ctx, sym, node.binexpr, scope, bldr);
+    case NodeType::IfExpr:
+        return genIfExpr(ctx, sym, node.ifexpr, scope, bldr);
     }
     std::cout << "Could not gen LLVM code for expression type " << static_cast<u32>(node.type) << '\n';
     exit(-1);
@@ -216,16 +228,16 @@ void genStatement(LLVMContext& ctx, SymbolTable& sym, LocalScope& scope, llvmBui
     switch (node.type)
     {
     case NodeType::Declaration:
-        genLocalVariableDecl(ctx, sym, scope, *static_cast<AstDecl*>(node.data), bldr);
+        genLocalVariableDecl(ctx, sym, scope, *node.decl, bldr);
         return;
     case NodeType::Assignment:
-        genAssign(ctx, sym, scope, bldr, *static_cast<AstAssign*>(node.data));
+        genAssign(ctx, sym, scope, bldr, *node.assign);
         return;
     case NodeType::Call:
-        genCall(ctx, sym, scope, bldr, modl, *static_cast<AstCall*>(node.data));
+        genCall(ctx, sym, scope, bldr, modl, *node.call);
         return;
     case NodeType::If:
-        genIf(ctx, sym, scope, bldr, modl, *static_cast<AstIf*>(node.data));
+        genIf(ctx, sym, scope, bldr, modl, *node.ifs);
         return;
     }
 

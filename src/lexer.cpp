@@ -130,6 +130,10 @@ Token Lexer::lexIdOrKeyword()
     case shash("char"): return makeTkn(4, TokenType::Char);
     case shash("byte"): return makeTkn(4, TokenType::Byte);
 
+    case shash("ifx"):  return makeTkn(3, TokenType::Ifx);
+    case shash("then"): return makeTkn(4, TokenType::Then);
+    case shash("else"): return makeTkn(4, TokenType::Else);
+
     default:
         return makeId(width);
     }

@@ -82,11 +82,16 @@ enum class TokenType : u16
     // Unary operators
     Addressof = 380,         // ^
 
+    // Special expressions
+    Ifx = 390,               // ifx
+    Then = 391,              // then
+    Matchx = 392,            // matchx
+
     // Assignment operators
-    Add = 400,                // +=
-    Multiply = 401,            // *=
-    Subtract = 402,            // -=
-    Divide = 403,            // /=
+    Add = 500,                // +=
+    Multiply = 501,            // *=
+    Subtract = 502,            // -=
+    Divide = 503,            // /=
 
     // Literals
     IntLiteral = 700,        // 0-9+

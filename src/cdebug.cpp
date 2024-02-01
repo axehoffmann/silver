@@ -59,16 +59,16 @@ void printExpr(const NodePtr& expr)
     switch (expr.type)
     {
     case NodeType::VarExpr:
-        printVarExpr(*static_cast<const AstVarExpr*>(expr.data));
+        printVarExpr(*expr.varexpr);
         return;
     case NodeType::Integer:
-        printInteger(*static_cast<const AstInteger*>(expr.data));
+        printInteger(*expr.integer);
         return;
     case NodeType::String:
-        printString(*static_cast<const AstString*>(expr.data));
+        printString(*expr.string);
         return;
     case NodeType::BinExpr:
-        const AstBinaryExpr* binop = static_cast<const AstBinaryExpr*>(expr.data);
+        const AstBinaryExpr* binop = expr.binexpr;
         std::cout << "(";
         printExpr(binop->lhs);
         std::cout << ' ' << getOpchar(binop->op) << ' ';
@@ -127,16 +127,16 @@ void printStatement(const NodePtr& stmt, i32 i)
     switch (stmt.type)
     {
     case NodeType::Declaration:
-        printDecl(*static_cast<const AstDecl*>(stmt.data));
+        printDecl(*stmt.decl);
         return;
     case NodeType::Assignment:
-        printAssign(*static_cast<const AstAssign*>(stmt.data));
+        printAssign(*stmt.assign);
         return;
     case NodeType::Call:
-        printCall(*static_cast<const AstCall*>(stmt.data));
+        printCall(*stmt.call);
         return;
     case NodeType::If:
-        printIf(*static_cast<const AstIf*>(stmt.data), i);
+        printIf(*stmt.ifs, i);
         return;
     }
 
