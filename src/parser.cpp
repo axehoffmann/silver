@@ -371,6 +371,20 @@ void parseExternFn(Lexer& lx, ParseCtx& ctx)
     requireNext(lx, ctx, Semi);
 }
 
+void parseStruct(Lexer& lx, ParseCtx& ctx)
+{
+    const char* name = lx.eat().val;
+    lx.skip(2);
+    requireNext(lx, ctx, LBrace);
+    Vector<NodePtr> decls;
+    while (lx.peek(0).type != RBrace)
+    {
+        decls.push_back(parseDecl(lx, ctx));
+    }
+    requireNext(lx, ctx, RBrace);
+    ctx.structs.push_back(AstStruct{ name, std::move(decls) });
+}
+
 void parseDeclaration(Lexer& lx, ParseCtx& ctx)
 {
     if (lx.peek(1).type != Separator)
@@ -389,6 +403,7 @@ void parseDeclaration(Lexer& lx, ParseCtx& ctx)
         return;
     case Struct:
         // Struct decl
+        parseStruct(lx, ctx);
     case Enum:
         // Enum decl
     case Externfn:

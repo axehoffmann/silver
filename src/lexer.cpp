@@ -111,6 +111,7 @@ Token Lexer::lexIdOrKeyword()
         // Decls
     case shash("fn"):        return makeTkn(2, TokenType::Fn);
     case shash("externfn"): return makeTkn(8, TokenType::Externfn);
+    case shash("struct"):   return makeTkn(6, TokenType::Struct);
 
         // Control flow
     case shash("if"):       return makeTkn(2, TokenType::If);

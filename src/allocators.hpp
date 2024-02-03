@@ -68,6 +68,7 @@ private:
 
 #include <vector>
 #include <iostream>
+#include <atomic>
 
 constexpr u64 BLOCK_ARRAY_BLOCK_SIZE = 32;
 // A dynamic array type that has pointer stability by allocating in discrete blocks
@@ -159,3 +160,5 @@ public:
 private:
     std::vector<Block*> blocks;
 };
+
+// A BlockArray that functions correctly in a multithreaded context (in terms of reads and push_backs)

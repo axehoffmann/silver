@@ -9,8 +9,8 @@
 enum class NodeType : u32
 {
     Fn,
-
     Externfn,
+    Struct,
 
     Declaration,
     Assignment,
@@ -27,6 +27,7 @@ enum class NodeType : u32
     Call
 };
 
+struct AstStruct;
 struct AstFn;
 struct AstFnInterface;
 struct AstBinaryExpr;
@@ -45,6 +46,7 @@ struct NodePtr
     union
     {
         void* data;
+        AstStruct* stct;
         AstFn* fn;
         AstFnInterface* fni;
         AstBinaryExpr* binexpr;
@@ -99,6 +101,12 @@ struct AstDecl
 
     NodePtr valueExpr; // Expression dictating the value of the declaration.
     // valueExpr.data may be null.
+};
+
+struct AstStruct
+{
+    const char* identifier;
+    Vector<AstDecl> members;
 };
 
 struct AstInteger
@@ -174,10 +182,13 @@ struct ParseCtx
     // Functions linked against but not compiled here. e.g C functions
     BlockArray<AstFnInterface> externals;
 
+    BlockArray<AstStruct> structs;
+
     // Global variables declared in this file
     // Vector<AstDecl> variables;
 
     SymbolTable symbols;
+    TypeTable types;
 
     char buffer[1 << 20];
     u64 bptr = 0;
