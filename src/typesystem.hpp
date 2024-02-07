@@ -2,7 +2,6 @@
 
 #include "lib.hpp"
 #include "src/token.hpp"
-#include "src/ast.hpp"
 
 enum class TypeAnnotation : u8
 {
@@ -49,6 +48,8 @@ enum class TypeClass : u32
 };
 
 
+struct AstDecl;
+
 struct StructType
 {
     Vector<AstDecl*> variables;
@@ -59,20 +60,24 @@ struct TypeInfo
 {
     const char* key;
     TypeClass tyclass;
+    u32 size; // sz in bytes of ty
     union
     {
         StructType* structure;
-    }
-    u32 size; // sz in bytes of ty
+    };
 };
 
-// #TODO: Bad name, come up with something better
-struct SemanticCtx
+class TypeTable
 {
-    // The 'local' type table - of the module and all dependencies
-    TypeInfo* typeTable;
-    SyncedBlockArray<StructType>* globalTypeTable;
+public:
+    TypeTable();
+    ~TypeTable();
+
+    TypeRef fetchType(const Token& tok, TypeAnnotation subty);
+    void declareType(const char* name, StructType* type);
+
+private:
+    TypeInfo* data;
 };
 
 TypeInfo* fetchInfo(const TypeRef& ty);
-TypeRef fetchType(const Token& tok, TypeAnnotation subty);

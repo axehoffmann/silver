@@ -61,7 +61,7 @@ Type* resolveType(LLVMContext& ctx, TypeRef& ty)
         return Type::getVoidTy(ctx);
     }
     
-    std::cout << "cant handle type '" << info->name << "'\n";
+    std::cout << "cant handle type '" << info->key << "'\n";
     exit(-1);
 }
 

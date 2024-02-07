@@ -79,7 +79,7 @@ TypeRef parseType(Lexer& lx, ParseCtx& ctx)
     default: break;
     }
 
-    TypeRef ty = fetchType(lx.peek(0), tag);
+    TypeRef ty = ctx.types.fetchType(lx.peek(0), tag);
     lx.skip(1);
     return ty;
 }
@@ -96,7 +96,7 @@ NodePtr parseExpr(Lexer& lx, ParseCtx& ctx, u8 prec = 0);
 
 NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
 {
-    // Handle unary/other ops
+    // Handle unary/other ops 
     switch (lx.peek(0).type)
     {
     case Identifier:
@@ -343,7 +343,7 @@ AstFnInterface parseFnIface(Lexer& lx, ParseCtx& ctx)
     }
     else
     {
-        rettype = fetchType(Token{Void}, TypeAnnotation::Value);
+        rettype = ctx.types.fetchType(Token{Void}, TypeAnnotation::Value);
     }
 
     return AstFnInterface{ std::move(name), std::move(params), std::move(rettype) };
@@ -376,13 +376,16 @@ void parseStruct(Lexer& lx, ParseCtx& ctx)
     const char* name = lx.eat().val;
     lx.skip(2);
     requireNext(lx, ctx, LBrace);
-    Vector<NodePtr> decls;
+
+    StructType* t = allocate<StructType>(ctx);
     while (lx.peek(0).type != RBrace)
     {
-        decls.push_back(parseDecl(lx, ctx));
+        // #CLEANUP: a little bit icky, not a big deal tho
+        t->variables.push_back(parseDecl(lx, ctx).decl);
+        requireNext(lx, ctx, Semi);
     }
     requireNext(lx, ctx, RBrace);
-    ctx.structs.push_back(AstStruct{ name, std::move(decls) });
+    ctx.types.declareType(name, t);
 }
 
 void parseDeclaration(Lexer& lx, ParseCtx& ctx)

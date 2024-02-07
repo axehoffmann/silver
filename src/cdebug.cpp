@@ -36,7 +36,7 @@ void printType(const TypeRef& ty)
     if (ty.subty == TypeAnnotation::Pointer)
         std::cout << '*';
 
-    std::cout << fetchInfo(ty)->name;
+    std::cout << fetchInfo(ty)->key;
 }
 
 void printVarExpr(const AstVarExpr& expr)

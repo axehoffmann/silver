@@ -27,8 +27,12 @@ const char* in = R"(
 
 puts: externfn(val: *char) -> i32;
 
-main: fn()
-{
+Foo: struct {
+    fooby: i32;
+    epic: i32;
+}
+
+main: fn() {
     var: i32 = 3 - 3 + 6 * 4;
     x: i32 = var;
     
@@ -39,10 +43,8 @@ main: fn()
     printerton(var - 23, 1);
 }
 
-printerton: fn(cond: i32, msgnum: i32)
-{
-    if cond == 1 
-    {
+printerton: fn(cond: i32, msgnum: i32) {
+    if cond == 1 {
         var: *char = "Out of order declaration!";
         varB: *char = "Crazy stuff";
         puts(ifx msgnum == 0 then var else varB);
