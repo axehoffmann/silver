@@ -1,5 +1,5 @@
 ﻿#pragma once
 
-#include "lib.hpp"
+#include "src/lib.hpp"
 
 void complain(const char* message, u32 ln);

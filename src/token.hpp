@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../lib.hpp"
+#include "lib.hpp"
 #include "allocators.hpp"
 
 enum class TokenType : u16

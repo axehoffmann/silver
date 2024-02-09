@@ -26,7 +26,7 @@
 
 // A collection of function-local variables
 #include "stb_ds.h"
-#include "lib.hpp"
+#include "../lib.hpp"
 
 #include "llvm/IR/IRBuilder.h"
 

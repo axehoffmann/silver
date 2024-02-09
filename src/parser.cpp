@@ -407,6 +407,7 @@ void parseDeclaration(Lexer& lx, ParseCtx& ctx)
     case Struct:
         // Struct decl
         parseStruct(lx, ctx);
+        return;
     case Enum:
         // Enum decl
     case Externfn:
