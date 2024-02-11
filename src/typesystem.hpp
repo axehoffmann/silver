@@ -8,7 +8,8 @@ enum class TypeAnnotation : u8
     Value,
     Pointer,
     PointerPointer,
-    Array
+    Array,
+    Implicit // Implicit type propagation 
 };
 
 // Refers to an identifier string, until the typecheck phase, after which it points to an entry in the type table
@@ -39,7 +40,7 @@ enum class TypeClass : u32
     Char,     // char
     Byte,    // byte
     Bool,    // bool
-    Void,     // void
+    Void,     // void 
 
     // User types
     Fn = 100,
