@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lib.hpp"
-#include "src/token.hpp"
+#include "token.hpp"
 
 enum class TypeAnnotation : u8
 {
@@ -74,7 +74,7 @@ public:
     TypeTable();
     ~TypeTable();
 
-    TypeRef fetchType(const Token& tok, TypeAnnotation subty);
+    TypeRef fetchType(const TokenType& tok, TypeAnnotation subty);
     void declareType(const char* name, StructType* type);
 
 private:

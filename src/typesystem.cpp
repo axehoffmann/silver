@@ -40,7 +40,7 @@ TypeTable::~TypeTable()
     hmfree(data);
 }
 
-TypeRef TypeTable::fetchType(const Token& tok, TypeAnnotation subty)
+TypeRef TypeTable::fetchType(const TokenType& tok, TypeAnnotation subty)
 {
     using enum TokenType;
 
