@@ -78,6 +78,7 @@ struct AstBinaryExpr
     TokenType op;
     NodePtr lhs;
     NodePtr rhs;
+    TypeRef resultTy;
 };
 
 // An expression denoting a location in memory
@@ -85,6 +86,7 @@ struct AstBinaryExpr
 struct AstVarExpr
 {
     const char* identifier;
+    TypeRef resultTy;
 };
 
 
@@ -136,6 +138,7 @@ struct AstIfExpr
     NodePtr condition;
     NodePtr trueVal;
     NodePtr falseVal;
+    TypeRef resultTy;
 };
 
 struct AstFnInterface
@@ -155,6 +158,7 @@ struct AstCall
 {
     const char* name;
     Vector<NodePtr> args;
+    TypeRef resultTy;
 };
 
 AstFnInterface& getInterface(Symbol* symbol);

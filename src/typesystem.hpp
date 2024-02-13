@@ -76,9 +76,8 @@ public:
 
     TypeRef fetchType(const TokenType& tok, TypeAnnotation subty);
     void declareType(const char* name, StructType* type);
-
+    TypeInfo* fetchInfo(const TypeRef& ty);
 private:
     TypeInfo* data;
 };
 
-TypeInfo* fetchInfo(const TypeRef& ty);

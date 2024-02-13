@@ -71,6 +71,7 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
             exit(1);
         }
         // #TODO: take larger numeric type of the two
+        expr->resultTy = lty;
         return lty;
 
     // Comparison operators always return booleans
@@ -80,7 +81,9 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
     case Leq:
     case Gt:
     case Geq:
-        return table->fetchType(Bool, TypeAnnotation::Value);
+        TypeRef boolTy = table->fetchType(Bool, TypeAnnotation::Value);
+        expr->resultTy = boolTy;
+        return boolTy;
 
     case And:
     case Or:
@@ -100,7 +103,7 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
 
     case Modulo:
         // #TODO: modulo requires int types always
-
+        return table->fetchType(I32, TypeAnnotation::Value);
     }
 }
 
@@ -110,11 +113,11 @@ TypeRef checkExpr(TypeTable* table, NodePtr& expr)
     switch (expr.type)
     {
     case NodeType::BinExpr:
-        return checkBinExpr(expr.binexpr);
+        return checkBinExpr(table, expr.binexpr);
     case NodeType::IfExpr:
-        TypeRef tty = checkExpr(expr.ifexpr->trueVal);
-        TypeRef fty = checkExpr(expr.ifexpr->falseVal);
-        TypeRef condTy = checkExpr(expr.ifexpr->condition);
+        TypeRef tty = checkExpr(table, expr.ifexpr->trueVal);
+        TypeRef fty = checkExpr(table, expr.ifexpr->falseVal);
+        TypeRef condTy = checkExpr(table, expr.ifexpr->condition);
 
         if (tty != fty)
         {
@@ -132,24 +135,30 @@ TypeRef checkExpr(TypeTable* table, NodePtr& expr)
             printType(condTy);
             exit(1);
         }
+        expr.ifexpr->resultTy = tty;
         return tty;
+    case NodeType::Integer:
+        return table->fetchType(TokenType::I32, TypeAnnotation::Value);
     }
+    
+    std::cout << "Cannot typecheck expression node of type " << static_cast<u32>(expr.type);
+    exit(1);
 }
 
-void checkDecl(AstDecl* decl)
+void checkDecl(TypeTable* table, AstDecl* decl)
 {
     if (decl->valueExpr.data == nullptr)
     {
         return;
     }
 
-    TypeRef exprType = checkExpr(decl->valueExpr);
+    TypeRef exprType = checkExpr(table, decl->valueExpr);
 
 }
 
 void checkBlock(TypeRef& returnType, AstBlock& block)
 {
-    for (NodePtr& stmt : block.statements) 
+    for (NodePtr& stmt : block.statements)
     {
         switch (stmt.type)
         {

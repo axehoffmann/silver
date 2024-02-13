@@ -1,6 +1,6 @@
 #include "typesystem.hpp"
 
-#include "stb_ds.h"
+#include "../stb_ds.h"
 
 // Builtin types are defined in a static seperate table (? for now ?) 
 TypeInfo builtinTys[] = {
@@ -23,7 +23,7 @@ TypeInfo builtinTys[] = {
     { "void", TypeClass::Void,   1, }, // #TODO: void size meaningful ever?
 };
 
-TypeInfo* fetchInfo(const TypeRef& ty)
+TypeInfo* TypeTable::fetchInfo(const TypeRef& ty)
 {
     if (!ty.resolved)
         return nullptr;
