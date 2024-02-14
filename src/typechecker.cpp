@@ -51,8 +51,8 @@ TypeRef checkExpr(TypeTable* table, NodePtr& expr);
 TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
 {
     // #TODO: non-equal numeric types etc
-    TypeRef lty = checkExpr(expr->lhs);
-    TypeRef rty = checkExpr(expr->rhs);
+    TypeRef lty = checkExpr(table, expr->lhs);
+    TypeRef rty = checkExpr(table, expr->rhs);
     switch (expr->op.type)
     {
         using enum TokenType;
@@ -153,10 +153,26 @@ void checkDecl(TypeTable* table, AstDecl* decl)
     }
 
     TypeRef exprType = checkExpr(table, decl->valueExpr);
-
+    cascadeTypes(decl->type, exprType);
 }
 
-void checkBlock(TypeRef& returnType, AstBlock& block)
+
+void checkBlock(TypeTable* table, TypeRef& returnType, AstBlock& block);
+
+void checkIf(TypeTable* table, TypeRef& returnType, AstIf* ifb)
+{
+    TypeRef condTy = checkExpr(table, ifb->condition); 
+    if (condTy != table->fetchType(TokenType::Bool, TypeAnnotation::Value))
+    {
+        std::cout << "If-statement condition must be of type bool, instead found ";
+        printType(condTy);
+        exit(1);
+    }
+
+    checkBlock(table, returnType, *ifb->block);
+}
+
+void checkBlock(TypeTable* table, TypeRef& returnType, AstBlock& block)
 {
     for (NodePtr& stmt : block.statements)
     {
@@ -164,10 +180,11 @@ void checkBlock(TypeRef& returnType, AstBlock& block)
         {
             using enum NodeType;
         case Declaration:
-            checkDecl(static_cast<AstDecl*>(stmt.data));
+            checkDecl(table, static_cast<AstDecl*>(stmt.data));
             return;
         case Assignment:
         case If:
+            checkIf(table, returnType, stmt.ifs);
         case Call:
         default:
             std::cout << "Invalid AST statement type: " 

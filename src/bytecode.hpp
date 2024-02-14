@@ -2,6 +2,18 @@
 
 #include "lib.hpp"
 
+// arginfo structure
+// 0000   00  0      0 
+// ^type      ^imm1  ^imm2 
+
+enum BcType : u8
+{
+    // Types
+    F32, F64,
+    I8, I16, I32, I64,
+    U8, U16, U32, U64,
+};
+
 enum Instruction : u8
 {
     End, // End of block
@@ -9,8 +21,12 @@ enum Instruction : u8
     Load,
     Store,
     Alloca,
-    Deref, // Array/struct indexing
-    
+    Pmth, // Array/struct indexing
+
+    // Modifiers
+    Sse,
+    Atmc, // e.g. atmc add i32 *x 
+
     // Arithmetic
     Add,
     Sub,
@@ -48,12 +64,11 @@ enum Instruction : u8
 
     // Conversion ops
     Abs, // sint to uint
-    Zwide, // Zero-extension to widen int
-    Swide, // Sign-extension to widen signed int
+    Extz, // Zero-extension to widen int
+    Exts, // Sign-extension to widen signed int
     Trunc, // Truncate int
-    Ftoi,
-    Itof,
-
-    // Special ops
-    Atomic, // rmw - eg.  Atomic Add A B
+    Ftosi,
+    Sitof,
+    Ftoui,
+    Uitof,
 };

@@ -172,7 +172,6 @@ NodePtr parseDecl(Lexer& lx, ParseCtx& ctx)
     const char* name = lx.peek(0).val;
     lx.skip(2);
     TypeRef type = parseType(lx, ctx);
-    
 
     NodePtr expr{};
     if (lx.peek(0).type == Assign)
