@@ -38,20 +38,20 @@ main: fn() {
     
     var = x;
     puts("Hello, digital universe");
-    printerton(0);
-    printerton(1, 0);
-    printerton(var - 23, 1);
+    printerton(false, 1);
+    printerton(true, 0);
+    printerton(false, 1);
 }
 
-printerton: fn(cond: i32, msgnum: i32) {
-    if cond == 1 {
+printerton: fn(cond: bool, msgnum: i32) {
+    if cond == true || false {
         var: *char = "Out of order declaration!";
         varB: *char = "Crazy stuff";
         puts(ifx msgnum == 0 then var else varB);
     }
 }
 
-)" + '\0';
+)";
 
 #define PARSE       1
 #define CODEGEN     1
@@ -84,6 +84,7 @@ int main()
     while (parseAst(*lex, *pctx));
     parseT = timerToMs(sample, c::now());
 
+    /*
     for (auto& ex : pctx->externals)
     {
         printFnIface(ex); std::cout << '\n';
@@ -93,7 +94,7 @@ int main()
     { 
         printFn(fn); std::cout << '\n';
     }
-
+    */
 
     // ----- LLVM -----
 #if CODEGEN == 1

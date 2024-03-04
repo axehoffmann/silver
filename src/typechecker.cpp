@@ -35,7 +35,7 @@ void resolveType(TypeTable* table, TypeRef& ty)
     if (!ty.resolved)
     {
         // #TODO: update fetchInfo func to try fetch by identifier too
-        TypeInfo* tinfo = table->fetchInfo(ty);
+        TypeInfo* tinfo = table->resolveType(ty);
         if (tinfo == nullptr)
         {
             std::cout << "Could not resolve type ";
@@ -53,7 +53,7 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
     // #TODO: non-equal numeric types etc
     TypeRef lty = checkExpr(table, expr->lhs);
     TypeRef rty = checkExpr(table, expr->rhs);
-    switch (expr->op.type)
+    switch (expr->op)
     {
         using enum TokenType;
     case Plus:
@@ -62,9 +62,7 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
     case Divide:
         if (lty.subty != rty.subty || lty.val != rty.val)
         {
-            std::cout << "Operator ";
-            printOp(expr->op.type);
-            std::cout << " cannot be used on types ";
+            std::cout << "Operator " << getOpchar(expr->op) << " cannot be used on types ";
             printType(lty);
             std::cout << " and ";
             printType(rty);
@@ -87,12 +85,10 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
 
     case And:
     case Or:
-        TypeRef boolTy = table->fetchType(Bool, TypeAnnotation::Value);
+        boolTy = table->fetchType(Bool, TypeAnnotation::Value);
         if (lty != boolTy || rty != boolTy)
         {
-            std::cout << "Operator ";
-            printOp(expr->op.type);
-            std::cout << " requires both operands to be of type bool."
+            std::cout << "Operator '" << getOpchar(expr->op) << "' requires both operands to be of type bool."
                 << " Instead, types found were ";
             printType(lty);
             std::cout << " and ";
@@ -104,6 +100,9 @@ TypeRef checkBinExpr(TypeTable* table, AstBinaryExpr* expr)
     case Modulo:
         // #TODO: modulo requires int types always
         return table->fetchType(I32, TypeAnnotation::Value);
+    default:
+        std::cout << "Invalid binary operator\n";
+        exit(1);
     }
 }
 
@@ -169,7 +168,7 @@ void checkIf(TypeTable* table, TypeRef& returnType, AstIf* ifb)
         exit(1);
     }
 
-    checkBlock(table, returnType, *ifb->block);
+    checkBlock(table, returnType, ifb->block);
 }
 
 void checkBlock(TypeTable* table, TypeRef& returnType, AstBlock& block)

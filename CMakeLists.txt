@@ -17,7 +17,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 add_executable(silver "silver.cpp" "silver.hpp" "iter.hpp")
 add_subdirectory(src)
 
-target_include_directories(silver PUBLIC "../silver")
+target_include_directories(silver PUBLIC "../silver" "src")
 
 llvm_map_components_to_libnames(llvm_libs X86 instcombine passes instrumentation scalaropts transformutils analysis support core irreader)
 target_link_libraries(silver ${llvm_libs})

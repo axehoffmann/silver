@@ -23,7 +23,7 @@ TypeInfo builtinTys[] = {
     { "void", TypeClass::Void,   1, }, // #TODO: void size meaningful ever?
 };
 
-TypeInfo* TypeTable::fetchInfo(const TypeRef& ty)
+TypeInfo* fetchInfo(const TypeRef& ty)
 {
     if (!ty.resolved)
         return nullptr;
@@ -40,20 +40,20 @@ TypeTable::~TypeTable()
     hmfree(data);
 }
 
-TypeRef TypeTable::fetchType(const TokenType& tok, TypeAnnotation subty)
+TypeRef TypeTable::fetchType(TokenType tok, TypeAnnotation subty)
 {
     using enum TokenType;
 
     // Builtin types
-    if (toi(tok.type) >= toi(I8) && toi(tok.type) <= toi(Void))
+    if (toi(tok) >= toi(I8) && toi(tok) <= toi(Void))
     {
-        return TypeRef{ &builtinTys[toi(tok.type) - toi(I8)], true, subty };
+        return TypeRef{ (void*)(&builtinTys[toi(tok) - toi(I8)]), true, subty};
     }
 
-    if (tok.type != Identifier)
+    if (tok != Identifier)
     {
         std::cout << "Cannot handle type at: ";
-        printTok(tok);
+        // print(tok);
         exit(-1);
     }
 
@@ -65,12 +65,25 @@ TypeRef TypeTable::fetchType(const TokenType& tok, TypeAnnotation subty)
     }
 
     std::cout << "Cannot handle type at: ";
-    printTok(tok);
+    // printTok(tok);
     exit(-1);
+}
+
+TypeInfo* TypeTable::resolveType(const TypeRef& ty)
+{
+    if (!ty.resolved)
+        return nullptr;
+
+    return static_cast<TypeInfo*>(ty.val);
 }
 
 void TypeTable::declareType(const char* name, StructType* type)
 {
     TypeInfo t{ name, TypeClass::Struct, 0, type };
     hmputs(data, t);
+}
+
+bool operator==(const TypeRef& a, const TypeRef& b)
+{
+    return memcmp(&a, &b, sizeof(TypeRef)) == 0;
 }

@@ -18,17 +18,33 @@ struct Precedence
 
 Precedence getPrecedence(TokenType token)
 {
+    // Precedence is defined so that an equation like
+    //      a + b == c || a > c
+    // is parsed as expected:
+    //   ((a + b) == c) || (a > c)
     switch (token)
     {
+    case Eq:
+    case Neq:
+    case Gt:
+    case Geq:
+    case Lt:
+    case Leq:
+        return { 3, 4 };
     case Plus:
     case Minus:
-        return { 1, 2 };
+        return { 5, 6 };
     case Star:
     case FSlash:
     case Modulo:
-        return { 3, 4 };
+        return { 7, 8 };
+    case And:
+    case Or:
+        return { 1, 2 };
+    default:
+        // #TODO: proper error
+        exit(53);
     }
-    return { 0, 0 };
 }
 
 void parseComplain(const char* str, const Token& tok)
@@ -79,7 +95,7 @@ TypeRef parseType(Lexer& lx, ParseCtx& ctx)
     default: break;
     }
 
-    TypeRef ty = ctx.types.fetchType(lx.peek(0), tag);
+    TypeRef ty = ctx.types.fetchType(lx.peek(0).type, tag);
     lx.skip(1);
     return ty;
 }
@@ -116,6 +132,13 @@ NodePtr parseValue(Lexer& lx, ParseCtx& ctx)
         AstString* str = allocate<AstString>(ctx);
         str->value = lx.eat().val;
         return NodePtr{ .type=NodeType::String, .string=str };
+    }
+    case TrueLiteral:
+    case FalseLiteral:
+    {
+        AstBoolean* b = allocate<AstBoolean>(ctx);
+        b->value = lx.eat().type == TrueLiteral;
+        return NodePtr{ .type=NodeType::Boolean, .boolean=b };
     }
     case Ifx:
     {
@@ -342,7 +365,7 @@ AstFnInterface parseFnIface(Lexer& lx, ParseCtx& ctx)
     }
     else
     {
-        rettype = ctx.types.fetchType(Token{Void}, TypeAnnotation::Value);
+        rettype = ctx.types.fetchType(Void, TypeAnnotation::Value);
     }
 
     return AstFnInterface{ std::move(name), std::move(params), std::move(rettype) };

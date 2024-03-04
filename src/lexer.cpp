@@ -131,6 +131,9 @@ Token Lexer::lexIdOrKeyword()
     case shash("char"): return makeTkn(4, TokenType::Char);
     case shash("byte"): return makeTkn(4, TokenType::Byte);
 
+    case shash("true"): return makeTkn(4, TokenType::TrueLiteral);
+    case shash("false"): return makeTkn(5, TokenType::FalseLiteral);
+
     case shash("ifx"):  return makeTkn(3, TokenType::Ifx);
     case shash("then"): return makeTkn(4, TokenType::Then);
     case shash("else"): return makeTkn(4, TokenType::Else);
@@ -227,6 +230,14 @@ Token Lexer::lexToken()
         return Token{ TokenType::Eof };
     case '"':
         return lexBasicStringLiteral();
+    case '|':
+        if (*(src + offset + 1) == '|')
+            return makeTkn(2, TokenType::Or);
+        break;
+    case '&':
+        if (*(src + offset + 1) == '&')
+            return makeTkn(2, TokenType::And);
+        break;
     default:
         if (isalpha(*(src + offset)))
         {

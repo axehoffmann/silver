@@ -19,7 +19,7 @@
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 
 
-#include "src/ast.hpp"
+#include "ast.hpp"
 
 
 #pragma once

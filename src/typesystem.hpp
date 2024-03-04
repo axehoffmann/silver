@@ -74,10 +74,12 @@ public:
     TypeTable();
     ~TypeTable();
 
-    TypeRef fetchType(const TokenType& tok, TypeAnnotation subty);
+    TypeRef fetchType(TokenType tok, TypeAnnotation subty);
+    TypeInfo* resolveType(const TypeRef& ty);
     void declareType(const char* name, StructType* type);
-    TypeInfo* fetchInfo(const TypeRef& ty);
 private:
     TypeInfo* data;
 };
 
+TypeInfo* fetchInfo(const TypeRef& ty);
+bool operator==(const TypeRef& a, const TypeRef& b);

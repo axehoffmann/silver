@@ -10,3 +10,5 @@ void printExpr(const NodePtr& expr);
 void printFn(const AstFn& fn);
 void printFnIface(const AstFnInterface& fn);
 void printType(const TypeRef& ty);
+char getOpchar(TokenType tok);
+

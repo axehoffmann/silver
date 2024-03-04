@@ -8,6 +8,7 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Verifier.h"
+#include "stb_ds.h"
 
 // #TODO: investigate llvm/Support/VirtualFileSystem.h
 
@@ -59,6 +60,8 @@ Type* resolveType(LLVMContext& ctx, TypeRef& ty)
         return Type::getInt32Ty(ctx);
     case TypeClass::Void:
         return Type::getVoidTy(ctx);
+    case TypeClass::Bool:
+        return Type::getInt1Ty(ctx);
     }
     
     std::cout << "cant handle type '" << info->key << "'\n";
@@ -92,6 +95,11 @@ Value* genVarExpr(LLVMContext& ctx, AstVarExpr& node, LocalScope& scope, llvmBui
 Value* genStringLiteral(LLVMContext& ctx, AstString* node, LocalScope& scope, llvmBuilder& bldr)
 {
     return bldr.CreateGlobalStringPtr(node->value);
+}
+
+Value* genBoolean(LLVMContext& ctx, AstBoolean* node)
+{
+    return ConstantInt::get(Type::getInt1Ty(ctx), node->value ? 1 : 0);
 }
 
 Function* genFnInterface(LLVMContext& ctx, AstFnInterface& node, Module& modl)
@@ -133,9 +141,16 @@ Value* genBinOp(LLVMContext& ctx, SymbolTable& sym, AstBinaryExpr* node, LocalSc
         return bldr.CreateFDiv(lhs, rhs);
     case TokenType::Eq:
         return bldr.CreateICmpEQ(lhs, rhs);
+    case TokenType::Gt:
+        return bldr.CreateICmpSGT(lhs, rhs);
+    case TokenType::And:
+        return bldr.CreateAnd(lhs, rhs);
+    case TokenType::Or:
+        return bldr.CreateOr(lhs, rhs);
+    default:
+        std::cout << "Could not gen LLVM code for binary operator " << toi(node->op) << '\n';
+        exit(-1);
     }
-    std::cout << "Could not gen LLVM code for binary operator " << toi(node->op) << '\n';
-    exit(-1);
 }
 
 Value* genIfExpr(LLVMContext& ctx, SymbolTable& sym, AstIfExpr* expr, LocalScope& scope, llvmBuilder& bldr)
@@ -155,6 +170,8 @@ Value* genExpr(LLVMContext& ctx, SymbolTable& sym, NodePtr& node, LocalScope& sc
     {
     case NodeType::Integer:
         return genInteger(ctx, node.integer);
+    case NodeType::Boolean:
+        return genBoolean(ctx, node.boolean);
     case NodeType::VarExpr:
         return genVarExpr(ctx, *node.varexpr, scope, bldr);
     case NodeType::String:

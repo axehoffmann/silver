@@ -23,6 +23,7 @@ enum class NodeType : u32
     IfExpr,
     Integer,
     String,
+    Boolean,
 
     Call
 };
@@ -39,6 +40,7 @@ struct AstString;
 struct AstCall;
 struct AstIf;
 struct AstIfExpr;
+struct AstBoolean;
 
 struct NodePtr
 {
@@ -55,6 +57,7 @@ struct NodePtr
         AstDecl* decl;
         AstInteger* integer;
         AstString* string;
+        AstBoolean* boolean;
         AstCall* call;
         AstIf* ifs;
         AstIfExpr* ifexpr;
@@ -114,6 +117,11 @@ struct AstStruct
 struct AstInteger
 {
     u64 value;
+};
+
+struct AstBoolean
+{
+    bool value;
 };
 
 struct AstString
